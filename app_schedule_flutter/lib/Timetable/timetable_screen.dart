@@ -2,7 +2,7 @@
 import 'package:app_schedule_flutter/Timetable/timetable_data.dart';
 import 'package:flutter/material.dart';
 
-const double kDefaultPadding = 16.0;
+const double kDefaultPadding = 20.0;
 
 class TimetableScreen extends StatefulWidget {
   const TimetableScreen({super.key});
@@ -80,7 +80,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                                     color: Colors.black87,
                                     fontSize: 18.0,
                                     fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.center,
+                                    textAlign: TextAlign.center,
                               ),
                               Text(
                                 timetable[index].dayName,

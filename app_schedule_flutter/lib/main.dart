@@ -1,3 +1,4 @@
+import 'package:app_schedule_flutter/Screen/Profile_screen.dart';
 import 'package:app_schedule_flutter/Timetable/timetable_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const TimetableScreen(),
+      home: const ProfileScreen(),
     );
   }
 }
