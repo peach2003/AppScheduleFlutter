@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "733786203860",
+    "firebase_url": "https://flutter-app-schedule-learning-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "flutter-app-schedule-learning",
+    "storage_bucket": "flutter-app-schedule-learning.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:733786203860:android:ec2d853b89bd1c3c2ffd41",
+        "android_client_info": {
+          "package_name": "com.example.app_schedule_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhYTkP-BJ475BuQ_No_Qu-0OlUcC-rM2Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
