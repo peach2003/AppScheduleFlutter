@@ -1,7 +1,10 @@
+import 'package:app_schedule_flutter/Screen/Home_screen.dart';
+import 'package:app_schedule_flutter/Screen/Reset_Password_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Nhập thư viện shared_preferences
 import '../Theme/theme.dart';
 import '../Wigets/custom_scaffold.dart';
-
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,14 +15,77 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formSignInKey = GlobalKey<FormState>();
+  final TextEditingController _mssvController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool rememberPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials(); // Gọi hàm để lấy thông tin lưu trữ khi khởi động
+  }
+
+  // Hàm lấy MSSV và mật khẩu đã lưu
+  Future<void> _loadSavedCredentials() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _mssvController.text = prefs.getString('mssv') ?? '';
+    _passwordController.text = prefs.getString('password') ?? '';
+  }
+
+  // Hàm lưu MSSV và mật khẩu
+  Future<void> _rememberPassword() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (rememberPassword) {
+      await prefs.setString('mssv', _mssvController.text);
+      await prefs.setString('password', _passwordController.text);
+    } else {
+      await prefs.remove('mssv');
+      await prefs.remove('password');
+    }
+  }
+
+  // Hàm đăng nhập với MSSV
+  Future<void> _loginWithMSSV(String mssv, String password) async {
+    DatabaseReference ref = FirebaseDatabase.instance.ref().child('students');
+
+    DataSnapshot snapshot = await ref.orderByChild('stuid').equalTo(int.parse(mssv)).get();
+
+    if (snapshot.exists) {
+      Map<dynamic, dynamic> studentData = snapshot.value as Map<dynamic, dynamic>;
+
+      if (studentData.isNotEmpty) {
+        String storedPassword = studentData.values.first['password'];
+        if (storedPassword == password) {
+          // Chuyển đến màn hình chính sau khi đăng nhập thành công
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đăng nhập thành công')),
+          );
+
+          // Ghi nhớ thông tin đăng nhập
+          await _rememberPassword();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Mật khẩu không đúng')),
+          );
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('MSSV không tồn tại')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return CustomScaffold(
       child: Column(
         children: [
-          const Spacer(flex: 1), // Thay thế Expanded bằng Spacer để tối ưu hóa
+          const Spacer(flex: 1),
           Expanded(
             flex: 7,
             child: Container(
@@ -39,13 +105,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       _buildWelcomeText(),
                       const SizedBox(height: 20),
-                      _buildEmailField(),
+                      _buildMSSVField(),
                       const SizedBox(height: 20),
                       _buildPasswordField(),
                       const SizedBox(height: 20),
                       _buildRememberPasswordRow(),
                       const SizedBox(height: 30),
                       _buildLoginButton(context),
+                      const SizedBox(height: 20),
+                      GestureDetector(
+                        child: Text(
+                          'Quên mật khẩu?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: lightColorScheme.primary,
+                          ),
+                        ),
+                        onTap: () {
+                          // Chuyển đến màn hình quên mật khẩu
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ResetPasswordScreen()),
+                          );
+                        },
+                      ),
                       const SizedBox(height: 60),
                     ],
                   ),
@@ -70,9 +153,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Hàm xây dựng TextFormField Email
-  Widget _buildEmailField() {
+  // Hàm xây dựng TextFormField cho MSSV
+  Widget _buildMSSVField() {
     return TextFormField(
+      controller: _mssvController,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Vui lòng nhập MSSV';
@@ -96,6 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Hàm xây dựng TextFormField mật khẩu
   Widget _buildPasswordField() {
     return TextFormField(
+      controller: _passwordController,
       obscureText: true,
       obscuringCharacter: '*',
       validator: (value) {
@@ -140,18 +225,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
-        GestureDetector(
-          child: Text(
-            'Quên mật khẩu?',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: lightColorScheme.primary,
-            ),
-          ),
-          onTap: () {
-            // Xử lý khi người dùng nhấn "Quên mật khẩu"
-          },
-        ),
       ],
     );
   }
@@ -162,16 +235,8 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          if (_formSignInKey.currentState!.validate() && rememberPassword) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Processing Data')),
-            );
-          } else if (!rememberPassword) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Please agree to the processing of your data'),
-              ),
-            );
+          if (_formSignInKey.currentState!.validate()) {
+            _loginWithMSSV(_mssvController.text, _passwordController.text);
           }
         },
         child: const Text('Đăng nhập'),
