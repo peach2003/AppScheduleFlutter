@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 const double kDefaultPadding = 20.0;
 
 class TimetableScreen extends StatefulWidget {
-  const TimetableScreen({super.key});
+  final bool isInDashboard;
+  const TimetableScreen({Key? key, this.isInDashboard = false}) : super(key : key);
   static const String routename = 'Timetablescreen';
 
   @override
@@ -17,9 +18,17 @@ class _TimetableScreenState extends State<TimetableScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: widget.isInDashboard
+            ? null
+            : IconButton(
+              icon: Icon(Icons.arrow_back_ios_new),
+              onPressed: (){
+                 Navigator.pop(context);
+              },
+            ),
         title: Text('Timetable'),
         centerTitle: true,
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.blue.shade300,
       ),
       body: Column(
         children: [
