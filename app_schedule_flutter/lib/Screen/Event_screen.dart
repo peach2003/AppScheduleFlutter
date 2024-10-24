@@ -1,127 +1,94 @@
-import 'package:app_schedule_flutter/Screen/Detail_Event_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
-import '../Model/Event.dart';
-import '../Service/FirebaseService.dart';
+
+import 'Add_Event_screen.dart';
+
 
 class EventScreen extends StatefulWidget {
-  final bool isInDashboard;
-
-  const EventScreen({Key? key, this.isInDashboard=false}) : super(key:key);
+  const EventScreen({super.key});
 
   @override
-  _EventScreenState createState() => _EventScreenState();
+  State<EventScreen> createState() => _EventScreenState();
 }
 
 class _EventScreenState extends State<EventScreen> {
-  FirebaseService firebaseService = FirebaseService();
-  List<Event> events = [];
-  bool isLoading = true; // Biến để hiển thị trạng thái tải
+  final DatabaseReference _eventRef = FirebaseDatabase.instance.ref().child('events');
+  List<Map<dynamic, dynamic>> _events = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchEvents();
+    _loadEventsFromFirebase();  // Tải sự kiện khi khởi động
   }
 
-  // Lấy danh sách sự kiện từ Firebase và cập nhật trạng thái
-  Future<void> _fetchEvents() async {
-    List<Event> eventList = await firebaseService.getAllEvents();
+  // Hàm lắng nghe và tải dữ liệu từ Firebase
+  void _loadEventsFromFirebase() {
+    _eventRef.onValue.listen((event) {
+      final Map<dynamic, dynamic>? data = event.snapshot.value as Map<dynamic, dynamic>?;
 
-    // Sắp xếp các sự kiện theo thời gian giảm dần (mới nhất trước)
-    eventList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (data != null) {
+        final List<Map<dynamic, dynamic>> loadedEvents = [];
+        data.forEach((key, value) {
+          loadedEvents.add(value);
+        });
 
-    setState(() {
-      events = eventList;
-      isLoading = false; // Khi dữ liệu đã tải xong, ẩn trạng thái tải
+        // Sắp xếp sự kiện theo thứ tự ngày mới nhất về trước
+        loadedEvents.sort((a, b) {
+          DateTime dateA = DateFormat('yyyy-MM-dd HH:mm:ss').parse(a['create_at']);
+          DateTime dateB = DateFormat('yyyy-MM-dd HH:mm:ss').parse(b['create_at']);
+          return dateB.compareTo(dateA); // Sắp xếp theo ngày mới nhất
+        });
+
+        setState(() {
+          _events = loadedEvents;
+        });
+      }
     });
-  }
-
-  // Hàm định dạng ngày giờ
-  String formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy, hh:mm a').format(date); // Định dạng ngày giờ: dd/MM/yyyy hh:mm AM/PM
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: widget.isInDashboard
-        ? null
-        : IconButton(
-          icon: Icon(Icons.arrow_back_ios_new),
-          onPressed: (){
-            Navigator.pop(context);
-          },
-        ),
-        title:
-            Text(
-              'Tin sự kiện',
-              style: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-        centerTitle: true,
-        elevation: 0, // Bỏ độ nổi của AppBar để đường kẻ rõ ràng hơn
-      ),
-      body: Column(
-        children: [
-          // Thêm Divider để tạo đường ngăn cách giữa AppBar và body
-          /*Divider(
-            height: 1,
-            thickness: 0,
-            color: Colors.grey, // Màu của đường ngăn cách
-          ),*/
-          Expanded(
-            child: isLoading
-                ? Center(child: CircularProgressIndicator()) // Hiển thị loading khi chưa có dữ liệu
-                : events.isEmpty
-                ? Center(child: Text('Không có sự kiện nào để hiển thị.')) // Khi không có dữ liệu
-                : ListView.builder(
-              itemCount: events.length,
-              itemBuilder: (context, index) {
-                Event event = events[index];
-                return ListTile(
-                  contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                  title: Text(
-                    event.title,
-                    style: TextStyle(
-                      fontSize: 19,
-                      // fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(formatDate(event.createdAt), style: TextStyle(fontSize: 16),), // Định dạng ngày
-                  leading: ClipRRect(
-                    //borderRadius: BorderRadius.circular(8.0), // Bo góc cho hình ảnh
-                    child: SizedBox(
-                      width: 90, // Đặt kích thước chiều rộng
-                      height: 70, // Đặt kích thước chiều cao
-                      child: Image.network(
-                        event.image,
-                        fit: BoxFit.cover, // Đảm bảo hình ảnh vừa với kích thước
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.error), // Xử lý lỗi khi không tải được hình ảnh
-                      ),
-                    ),
-                  ),
-                  onTap: () {
-                    // Chức năng chuyển hướng đến chi tiết sự kiện khi nhấn vào item sự kiện
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context)=> DetailEvent(event: event), // Chuyển đến trang chi tiết sự kiện
-                      )
-                    );
-                  },
-                );
-              },
-            ),
+        title: Text('Danh sách sự kiện'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddEventScreen()),
+              );
+            },
           ),
         ],
       ),
+      body: _buildEventList(),
+    );
+  }
+
+  // Widget để hiển thị danh sách sự kiện
+  Widget _buildEventList() {
+    return _events.isEmpty
+        ? Center(child: Text('Chưa có sự kiện nào.'))
+        : ListView.builder(
+      itemCount: _events.length,
+      itemBuilder: (context, index) {
+        final event = _events[index];
+        return ListTile(
+          leading: Image.network(
+            event['image'],
+            width: 50,
+            height: 50,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.error);
+            },
+          ),
+          title: Text(event['title']),
+          subtitle: Text(event['create_at']),
+        );
+      },
     );
   }
 }

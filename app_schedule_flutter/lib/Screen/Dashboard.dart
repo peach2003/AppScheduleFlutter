@@ -10,9 +10,7 @@ import '../Timetable/timetable_screen.dart';
 import 'Profile_screen.dart';
 
 class Dashboad extends StatefulWidget {
-  final int selectedIndex;
-
-  const Dashboad({super.key, this.selectedIndex=0});// mặc định tab đầu tiên bằng 0
+  const Dashboad({super.key});
 
   @override
   State<Dashboad> createState() => _DashboadState();
@@ -24,35 +22,19 @@ class _DashboadState extends State<Dashboad> {
   //List danh sách các màn hình
   final List<Widget> _page=[
     HomeScreen(),
-    EventScreen(isInDashboard: true),
-    TimetableScreen(isInDashboard: true),
+    DetailEvent(),
+    TimetableScreen(),
     ProfileScreen()
   ];
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _selectionIndex= widget.selectedIndex; // Thiết lập tab từ giá trị truyền vào
-  }
-  void _navigateToSelectedTab(int index){
-    if(_selectionIndex != index){
-      setState(() {
-        _selectionIndex=index;
-      });
-    }
-  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _page[_selectionIndex],//Hiển thị màn hình dựa trên các tab được chọn
       bottomNavigationBar: Container(
-
-        decoration: BoxDecoration(
-          color: Colors.lightBlueAccent,
-          borderRadius: BorderRadius.only( topLeft: Radius.circular(10), topRight: Radius.circular(10), ),
-        ),
+        color: Colors.lightBlueAccent,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
           child: GNav(
             gap: 8,
             backgroundColor: Colors.lightBlueAccent,
@@ -65,27 +47,25 @@ class _DashboadState extends State<Dashboad> {
               GButton(
                 icon: Icons.home_outlined,
                 text: 'Trang Chủ',
-                textSize: 20,
               ),
               GButton(
                 icon:Icons.event_available_outlined,
-                text: 'Sự kiện đã lưu',
-                textSize: 20,
+                text: 'SK đã lưu',
               ),
               GButton(
                 icon: Icons.today_outlined,
-                text: 'Thời khóa biểu',
-                textSize: 20,
+                text: 'TKB',
               ),
               GButton(
                 icon: Icons.settings_outlined,
                 text: 'Cài đặt',
-                textSize: 20,
               )
             ],
             selectedIndex: _selectionIndex,
             onTabChange: (index){
-              _navigateToSelectedTab(index);
+              setState(() {
+                _selectionIndex=index;
+              });
             },
           ),
         ),
