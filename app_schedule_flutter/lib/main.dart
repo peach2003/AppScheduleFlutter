@@ -1,17 +1,25 @@
 import 'package:app_schedule_flutter/Screen/Home_screen.dart';
+import 'package:app_schedule_flutter/Screen/Login_screen.dart';
+import 'package:app_schedule_flutter/Screen/Profile_screen.dart';
+import 'package:app_schedule_flutter/Timetable/timetable_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'package:app_schedule_flutter/Screen/Login_screen.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(const MyApp());
+
+  // Khởi tạo Firebase
+  await Firebase.initializeApp().then((value) {
+    print('Firebase initialized');
+  }).catchError((error) {
+    print('Firebase initialization error: $error');
+  });
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
