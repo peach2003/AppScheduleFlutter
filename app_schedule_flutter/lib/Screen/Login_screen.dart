@@ -1,3 +1,4 @@
+import 'package:app_schedule_flutter/Screen/Dashboard.dart';
 import 'package:app_schedule_flutter/Screen/Home_screen.dart';
 import 'package:app_schedule_flutter/Screen/Reset_Password_screen.dart';
 import 'package:flutter/material.dart';
@@ -44,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Hàm đăng nhập với MSSV
   Future<void> _loginWithMSSV(String mssv, String password) async {
     DatabaseReference ref = FirebaseDatabase.instance.ref().child('students');
 
@@ -56,13 +56,37 @@ class _LoginScreenState extends State<LoginScreen> {
       if (studentData.isNotEmpty) {
         String storedPassword = studentData.values.first['password'];
         if (storedPassword == password) {
+          // Lưu userId vào SharedPreferences
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('userId', mssv);
+
           // Chuyển đến màn hình chính sau khi đăng nhập thành công
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
+            MaterialPageRoute(builder: (context) => Dashboad()),
           );
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đăng nhập thành công')),
+            SnackBar(
+              content: Text(
+                'Đăng nhập thành công!',
+                style: TextStyle(color: Colors.white),  // Thay đổi màu chữ nếu cần
+              ),
+              backgroundColor: Colors.green,  // Thay đổi màu nền của Snackbar
+              duration: Duration(seconds: 2),  // Thời gian hiển thị là 3 giây
+              //behavior: SnackBarBehavior.floating,  // Cho phép Snackbar trôi nổi
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),  // Bo tròn các góc của Snackbar
+              ),
+              /*action: SnackBarAction(
+            label: 'Đóng',
+            textColor: Colors.white,
+            onPressed: () {
+              // Hành động khi nhấn nút 'Đóng'
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),*/
+
+            ),
           );
 
           // Ghi nhớ thông tin đăng nhập
@@ -79,6 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

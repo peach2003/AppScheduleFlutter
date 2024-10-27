@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context)=>DetailEvent(event: event),
+                    builder: (context)=>DetailEvent(event: event,),
                   ),
                 );
               },
@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context)=>DetailEvent(event: latesEvent!),
+                      builder: (context)=>DetailEvent(event: latesEvent!,),
                     ),
                   );
                 },

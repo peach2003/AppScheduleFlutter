@@ -2,6 +2,7 @@
 import 'package:app_schedule_flutter/Screen/Detail_Event_screen.dart';
 import 'package:app_schedule_flutter/Screen/Event_screen.dart';
 import 'package:app_schedule_flutter/Screen/Home_screen.dart';
+import 'package:app_schedule_flutter/Screen/Save_Event_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -24,7 +25,7 @@ class _DashboadState extends State<Dashboad> {
   //List danh sách các màn hình
   final List<Widget> _page=[
     HomeScreen(),
-    EventScreen(isInDashboard: true),
+    SaveEventScreen(isInDashboard: true),
     TimetableScreen(isInDashboard: true),
     ProfileScreen()
   ];
@@ -79,7 +80,7 @@ class _DashboadState extends State<Dashboad> {
               ),
               GButton(
                 icon: Icons.settings_outlined,
-                text: 'Cài đặt',
+                text: 'Tài khoản',
                 textSize: 20,
               )
             ],
