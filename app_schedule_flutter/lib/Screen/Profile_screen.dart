@@ -1,4 +1,4 @@
-import 'package:app_schedule_flutter/Timetable/timetable_screen.dart';
+import 'package:app_schedule_flutter/Screen/timetable_screen.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {

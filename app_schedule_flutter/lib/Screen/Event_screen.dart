@@ -39,7 +39,7 @@ class _EventScreenState extends State<EventScreen> {
 
   // Hàm định dạng ngày giờ
   String formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy, hh:mm a').format(date); // Định dạng ngày giờ: dd/MM/yyyy hh:mm AM/PM
+    return DateFormat('dd/MM/yyyy  hh:mm a').format(date); // Định dạng ngày giờ: dd/MM/yyyy hh:mm AM/PM
   }
 
   @override
@@ -68,11 +68,12 @@ class _EventScreenState extends State<EventScreen> {
       body: Column(
         children: [
           // Thêm Divider để tạo đường ngăn cách giữa AppBar và body
-          /*Divider(
-            height: 1,
-            thickness: 0,
-            color: Colors.grey, // Màu của đường ngăn cách
-          ),*/
+          Divider(
+            color: Colors.grey, // Màu của đường kẻ
+            thickness: 1, // Độ dày của đường kẻ
+            //indent: 20, // Thụt lề bên trái
+            //endIndent: 70, // Thụt lề bên phải
+          ),
           Expanded(
             child: isLoading
                 ? Center(child: CircularProgressIndicator()) // Hiển thị loading khi chưa có dữ liệu
@@ -112,7 +113,7 @@ class _EventScreenState extends State<EventScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context)=> DetailEvent(event: event), // Chuyển đến trang chi tiết sự kiện
+                        builder: (context)=> DetailEvent(event: event,), // Chuyển đến trang chi tiết sự kiện
                       )
                     );
                   },

@@ -4,6 +4,7 @@ class Event {
   String content;
   String image;
   DateTime createdAt;
+  String link;
 
   Event({
     this.event_id,
@@ -11,6 +12,7 @@ class Event {
     required this.content,
     required this.image,
     required this.createdAt,
+    required this.link,
   });
 
   // Chuyển đổi đối tượng từ Firebase Snapshot sang Event
@@ -28,6 +30,7 @@ class Event {
       createdAt: snapshot['created_at'] != null
           ? DateTime.parse(snapshot['created_at'])
           : DateTime.now(),
+      link: snapshot['link'] != null ? snapshot['link'] as String : 'No link Available',
     );
   }
 
@@ -39,6 +42,7 @@ class Event {
       'content': content,
       'image': image,
       'created_at': createdAt.toIso8601String(),
+      'link': link,
     };
   }
 }
