@@ -2,7 +2,7 @@ import 'package:app_schedule_flutter/Screen/Dashboard.dart';
 import 'package:app_schedule_flutter/Screen/Home_screen.dart';
 import 'package:app_schedule_flutter/Screen/Login_screen.dart';
 import 'package:app_schedule_flutter/Screen/Profile_screen.dart';
-import 'package:app_schedule_flutter/Timetable/timetable_screen.dart';
+import 'package:app_schedule_flutter/Screen/timetable_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';

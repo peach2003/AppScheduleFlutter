@@ -83,8 +83,8 @@ class _SaveEventScreenState extends State<SaveEventScreen> {
                         // Sử dụng Image.asset() để hiển thị tệp GIF từ assets
                         Image.asset(
                           'assets/images/loading.gif',
-                          width: 500,
-                          height: 260,
+                          width: 310,
+                          height: 230,
                           fit: BoxFit.cover,
                         ),
                         SizedBox(height: 25),

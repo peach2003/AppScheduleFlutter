@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
-import '../Timetable/timetable_screen.dart';
+import 'timetable_screen.dart';
 import 'Profile_screen.dart';
 
 class Dashboad extends StatefulWidget {

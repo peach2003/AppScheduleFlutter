@@ -262,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: EdgeInsets.all(16),
                     height: 230,
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade200,
+                      color: Colors.lightBlueAccent,
                       borderRadius: BorderRadius.only(
                         bottomRight: Radius.circular(30),
                         bottomLeft: Radius.circular(30),
