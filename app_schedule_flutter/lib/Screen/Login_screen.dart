@@ -1,4 +1,5 @@
 import 'package:app_schedule_flutter/Screen/Dashboard.dart';
+import 'package:app_schedule_flutter/Screen/Home_screen.dart';
 import 'package:app_schedule_flutter/Screen/Reset_Password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -126,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               _showErrorSnackBar('Mật khẩu không đúng');
             }
           }
+
         } else {
           Navigator.of(context).pop();
           _showErrorSnackBar('MSSV không tồn tại');
@@ -138,7 +140,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       }
     }
   }
-
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

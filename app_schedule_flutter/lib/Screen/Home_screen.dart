@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context)=>DetailEvent(event: event),
+                    builder: (context)=>DetailEvent(event: event,),
                   ),
                 );
               },
@@ -262,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: EdgeInsets.all(16),
                     height: 230,
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade200,
+                      color: Colors.lightBlueAccent,
                       borderRadius: BorderRadius.only(
                         bottomRight: Radius.circular(30),
                         bottomLeft: Radius.circular(30),
@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context)=>DetailEvent(event: latesEvent!),
+                      builder: (context)=>DetailEvent(event: latesEvent!,),
                     ),
                   );
                 },

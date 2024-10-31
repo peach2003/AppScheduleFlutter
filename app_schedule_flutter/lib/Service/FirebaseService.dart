@@ -1,12 +1,26 @@
+import 'package:app_schedule_flutter/Model/SaveEvent.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../Model/Class.dart';
 import '../Model/Event.dart';
+import '../Model/Room.dart';
+import '../Model/Schedule.dart';
+import '../Model/Subject.dart';
 
 class FirebaseService {
   final DatabaseReference _eventRef = FirebaseDatabase.instance.ref().child('events');
-
+  final DatabaseReference _saveEventRef = FirebaseDatabase.instance.ref().child('save_events');
+  final DatabaseReference _scheduleRef = FirebaseDatabase.instance.ref().child('schedules');
+  final DatabaseReference _classRef = FirebaseDatabase.instance.ref().child('classes');
+  final DatabaseReference _roomRef = FirebaseDatabase.instance.ref().child('rooms');
+  final DatabaseReference _subjectRef = FirebaseDatabase.instance.ref().child('subjects');
+  final database = FirebaseDatabase.instance;
   // Trả về tham chiếu tới nhánh 'events' để có thể lắng nghe thay đổi
   DatabaseReference getEventRef() {
     return _eventRef;
+  }
+
+  DatabaseReference getSaveEventRef() {
+    return _saveEventRef;
   }
 
   // Hàm lấy danh sách sự kiện một lần (nếu cần)
@@ -26,5 +40,133 @@ class FirebaseService {
     }
     return events;
   }
-}
 
+  // Lưu sự kiện đã đăng ký
+  Future<void> saveEvent(SaveEvent saveEvent) async {
+    String key = _saveEventRef.push().key ?? '';  // Tạo một key mới trong Firebase
+    saveEvent.saveEventId = key;  // Gán key cho saveEventId
+
+    await _saveEventRef.child(key).set(saveEvent.toJson());  // Lưu vào Firebase
+  }
+
+  // Lấy danh sách sự kiện đã lưu
+  Future<List<SaveEvent>> getSavedEvents() async {
+    List<SaveEvent> events = [];
+    try {
+      DataSnapshot snapshot = await _saveEventRef.get();
+      if (snapshot.exists) {
+        Map<dynamic, dynamic> eventMap = snapshot.value as Map<dynamic, dynamic>;
+        eventMap.forEach((key, value) {
+          events.add(SaveEvent.fromSnapshot(value));
+        });
+      }
+    } catch (e) {
+      throw Exception('Lỗi khi lấy danh sách sự kiện đã lưu: $e');
+    }
+    return events;
+  }
+  // Hàm mới: Lắng nghe sự thay đổi của sự kiện theo thời gian thực từ 'events'
+  Stream<List<Event>> listenToEvents() {
+    return _eventRef.onValue.map((event) {
+      List<Event> events = [];
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic> eventMap = event.snapshot.value as Map<dynamic, dynamic>;
+        eventMap.forEach((key, value) {
+          events.add(Event.fromSnapshot(value));
+        });
+      }
+      return events;
+    });
+  }
+
+  // Hàm mới: Lắng nghe sự thay đổi của sự kiện đã đăng ký theo thời gian thực từ 'save_events'
+  Stream<List<SaveEvent>> listenToSavedEvents() {
+    return _saveEventRef.onValue.map((event) {
+      List<SaveEvent> savedEvents = [];
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic> savedEventMap = event.snapshot.value as Map<dynamic, dynamic>;
+        savedEventMap.forEach((key, value) {
+          savedEvents.add(SaveEvent.fromSnapshot(value));
+        });
+      }
+      return savedEvents;
+    });
+  }
+  // Hàm xóa sự kiện đã đăng ký
+  Future<void> deleteSavedEvent(String saveEventId) async {
+    try {
+      await _saveEventRef.child(saveEventId).remove();  // Xóa sự kiện dựa trên saveEventId
+      print('Sự kiện đã được xóa thành công.');
+    } catch (e) {
+      print('Lỗi khi xóa sự kiện đã lưu: $e');
+      throw Exception('Lỗi khi xóa sự kiện đã lưu: $e');
+    }
+  }
+  // Lấy danh sách thời khóa biểu từ Firebase
+  Future<List<Schedule>> getAllSchedules() async {
+    List<Schedule> schedules = [];
+    try {
+      DataSnapshot snapshot = await _scheduleRef.get();
+      if (snapshot.exists) {
+        Map<dynamic, dynamic> scheduleMap = snapshot.value as Map<dynamic, dynamic>;
+        scheduleMap.forEach((key, value) {
+          schedules.add(Schedule.fromSnapshot(value as Map<dynamic, dynamic>));
+        });
+      }
+    } catch (e) {
+      print("Lỗi khi lấy danh sách thời khóa biểu: $e");
+    }
+    return schedules;
+  }
+  // Lắng nghe sự thay đổi thời khóa biểu theo thời gian thực
+  Stream<List<Schedule>> listenToSchedules() {
+    return _scheduleRef.onValue.map((event) {
+      List<Schedule> schedules = [];
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic> scheduleMap = event.snapshot.value as Map<dynamic, dynamic>;
+        scheduleMap.forEach((key, value) {
+          schedules.add(Schedule.fromSnapshot(value));
+        });
+      }
+      return schedules;
+    });
+  }
+  // Lấy thông tin lớp học theo ID
+  Future<Class?> getClassById(String classId) async {
+    try {
+      final snapshot = await _classRef.child(classId).get();
+      if (snapshot.exists) {
+        return Class.fromJson(Map<String, dynamic>.from(snapshot.value as Map<dynamic, dynamic>));
+      }
+    } catch (e) {
+      print("Lỗi khi lấy lớp học: $e");
+    }
+    return null;
+  }
+
+  // Lấy thông tin môn học theo ID
+  Future<Subject?> getSubjectById(String subId) async {
+    try {
+      final snapshot = await _subjectRef.child(subId).get();
+      if (snapshot.exists) {
+        return Subject.fromJson(Map<String, dynamic>.from(snapshot.value as Map<dynamic, dynamic>));
+      }
+    } catch (e) {
+      print("Lỗi khi lấy môn học: $e");
+    }
+    return null;
+  }
+
+  // Lấy thông tin phòng học theo ID
+  Future<Room?> getRoomById(String roomId) async {
+    try {
+      final snapshot = await _roomRef.child(roomId).get();
+      if (snapshot.exists) {
+        return Room.fromJson(Map<String, dynamic>.from(snapshot.value as Map<dynamic, dynamic>));
+      }
+    } catch (e) {
+      print("Lỗi khi lấy phòng học: $e");
+    }
+    return null;
+  }
+}
