@@ -1,13 +1,11 @@
-import 'package:app_schedule_flutter/Screen/Home_screen.dart';
+import 'package:app_schedule_flutter/Screen/Dashboard.dart';
 import 'package:app_schedule_flutter/Screen/Login_screen.dart';
-import 'package:app_schedule_flutter/Screen/Profile_screen.dart';
-import 'package:app_schedule_flutter/Timetable/timetable_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:app_schedule_flutter/Screen/WelcomeScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
-import 'package:app_schedule_flutter/Screen/Login_screen.dart';
+import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,23 +37,27 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Wrapper để kiểm tra trạng thái xác thực
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
+  Future<bool> _checkLoggedIn() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isLoggedIn') ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    return FutureBuilder<bool>(
+      future: _checkLoggedIn(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
-        } else if (snapshot.hasData) {
-          return HomeScreen(); // Nếu người dùng đã đăng nhập
+        } else if (snapshot.hasData && snapshot.data == true) {
+          return WelcomeScreen(); // Đã đăng nhập
         } else {
-          return LoginScreen(); // Nếu người dùng chưa đăng nhập
+          return LoginScreen(); // Chưa đăng nhập
         }
       },
     );

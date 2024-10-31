@@ -1,8 +1,8 @@
-import 'package:app_schedule_flutter/Screen/Home_screen.dart';
+import 'package:app_schedule_flutter/Screen/Dashboard.dart';
 import 'package:app_schedule_flutter/Screen/Reset_Password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Nhập thư viện shared_preferences
+import 'package:shared_preferences/shared_preferences.dart';
 import '../Theme/theme.dart';
 import '../Wigets/custom_scaffold.dart';
 
@@ -13,26 +13,46 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _formSignInKey = GlobalKey<FormState>();
   final TextEditingController _mssvController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool rememberPassword = true;
+  bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials(); // Gọi hàm để lấy thông tin lưu trữ khi khởi động
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _loadSavedCredentials();
+    _animationController.forward();
   }
 
-  // Hàm lấy MSSV và mật khẩu đã lưu
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _mssvController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadSavedCredentials() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _mssvController.text = prefs.getString('mssv') ?? '';
-    _passwordController.text = prefs.getString('password') ?? '';
+    setState(() {
+      _mssvController.text = prefs.getString('mssv') ?? '';
+      _passwordController.text = prefs.getString('password') ?? '';
+    });
   }
 
-  // Hàm lưu MSSV và mật khẩu
   Future<void> _rememberPassword() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (rememberPassword) {
@@ -44,202 +64,331 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Hàm đăng nhập với MSSV
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 15),
+                const Text(
+                  'Đang đăng nhập...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _loginWithMSSV(String mssv, String password) async {
-    DatabaseReference ref = FirebaseDatabase.instance.ref().child('students');
+    if (!_isLoading) {
+      setState(() => _isLoading = true);
+      _showLoadingDialog(); // Hiển thị loading dialog
 
-    DataSnapshot snapshot = await ref.orderByChild('stuid').equalTo(int.parse(mssv)).get();
+      try {
+        DatabaseReference ref = FirebaseDatabase.instance.ref().child('students');
+        DataSnapshot snapshot = await ref.orderByChild('stuid').equalTo(int.parse(mssv)).get();
 
-    if (snapshot.exists) {
-      Map<dynamic, dynamic> studentData = snapshot.value as Map<dynamic, dynamic>;
+        await Future.delayed(const Duration(seconds: 2)); // Để loading hiển thị rõ hơn
 
-      if (studentData.isNotEmpty) {
-        String storedPassword = studentData.values.first['password'];
-        if (storedPassword == password) {
-          // Chuyển đến màn hình chính sau khi đăng nhập thành công
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đăng nhập thành công')),
-          );
+        if (snapshot.exists) {
+          Map<dynamic, dynamic> studentData = snapshot.value as Map<dynamic, dynamic>;
+          if (studentData.isNotEmpty) {
+            String storedPassword = studentData.values.first['password'];
+            if (storedPassword == password) {
+              await _rememberPassword();
 
-          // Ghi nhớ thông tin đăng nhập
-          await _rememberPassword();
+              // Cập nhật trạng thái đăng nhập trong SharedPreferences
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('isLoggedIn', true);
+
+              Navigator.of(context).pop(); // Đóng loading dialog
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => Dashboad()), // Điều hướng đến Dashboard
+              );
+            } else {
+              Navigator.of(context).pop();
+              _showErrorSnackBar('Mật khẩu không đúng');
+            }
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Mật khẩu không đúng')),
-          );
+          Navigator.of(context).pop();
+          _showErrorSnackBar('MSSV không tồn tại');
         }
+      } catch (e) {
+        Navigator.of(context).pop();
+        _showErrorSnackBar('Đã có lỗi xảy ra. Vui lòng thử lại sau.');
+      } finally {
+        setState(() => _isLoading = false);
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('MSSV không tồn tại')),
-      );
     }
+  }
+
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Text(message),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return CustomScaffold(
-      child: Column(
+      child: Stack(
         children: [
-          const Spacer(flex: 1),
-          Expanded(
-            flex: 7,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(25.0, 50.0, 25.0, 20.0),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(40.0),
-                  topRight: Radius.circular(40.0),
-                ),
-              ),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formSignInKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _buildWelcomeText(),
-                      const SizedBox(height: 20),
-                      _buildMSSVField(),
-                      const SizedBox(height: 20),
-                      _buildPasswordField(),
-                      const SizedBox(height: 20),
-                      _buildRememberPasswordRow(),
-                      const SizedBox(height: 30),
-                      _buildLoginButton(context),
-                      const SizedBox(height: 20),
-                      GestureDetector(
-                        child: Text(
-                          'Quên mật khẩu?',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: lightColorScheme.primary,
-                          ),
-                        ),
-                        onTap: () {
-                          // Chuyển đến màn hình quên mật khẩu
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ResetPasswordScreen()),
-                          );
-                        },
+          Column(
+            children: [
+              const Spacer(),
+              Expanded(
+                flex: 7,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(25.0, 50.0, 25.0, 20.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(40.0),
+                      topRight: Radius.circular(40.0),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
                       ),
-                      const SizedBox(height: 60),
                     ],
+                  ),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formSignInKey,
+                        child: Column(
+                          children: [
+                            _buildHeader(),
+                            const SizedBox(height: 40),
+                            _buildLoginForm(),
+                            const SizedBox(height: 30),
+                            _buildLoginButton(),
+                            const SizedBox(height: 20),
+                            _buildForgotPassword(),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  // Hàm xây dựng Text chào mừng
-  Widget _buildWelcomeText() {
-    return Text(
-      'Chào mừng',
-      style: TextStyle(
-        fontSize: 35.0,
-        fontWeight: FontWeight.w900,
-        color: lightColorScheme.primary,
-      ),
-    );
-  }
-
-  // Hàm xây dựng TextFormField cho MSSV
-  Widget _buildMSSVField() {
-    return TextFormField(
-      controller: _mssvController,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Vui lòng nhập MSSV';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: 'MSSV',
-        hintText: 'Nhập MSSV',
-        hintStyle: const TextStyle(color: Colors.black26),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.black12),
-        ),
-      ),
-    );
-  }
-
-  // Hàm xây dựng TextFormField mật khẩu
-  Widget _buildPasswordField() {
-    return TextFormField(
-      controller: _passwordController,
-      obscureText: true,
-      obscuringCharacter: '*',
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Vui lòng nhập mật khẩu';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: 'Mật khẩu',
-        hintText: 'Nhập mật khẩu',
-        hintStyle: const TextStyle(color: Colors.black26),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.black12),
-        ),
-      ),
-    );
-  }
-
-  // Hàm xây dựng hàng checkbox và quên mật khẩu
-  Widget _buildRememberPasswordRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHeader() {
+    return Column(
       children: [
-        Row(
-          children: [
-            Checkbox(
-              value: rememberPassword,
-              onChanged: (bool? value) {
-                setState(() {
-                  rememberPassword = value!;
-                });
-              },
-              activeColor: lightColorScheme.primary,
-            ),
-            const Text(
-              'Ghi nhớ mật khẩu',
-              style: TextStyle(color: Colors.black45),
-            ),
-          ],
+        Text(
+          'Chào mừng',
+          style: TextStyle(
+            fontSize: 35.0,
+            fontWeight: FontWeight.w900,
+            color: lightColorScheme.primary,
+            letterSpacing: 1.5,
+            shadows: [
+              Shadow(
+                offset: const Offset(1, 1),
+                blurRadius: 2.0,
+                color: Colors.black.withOpacity(0.1),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Đăng nhập để tiếp tục',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade600,
+          ),
         ),
       ],
     );
   }
 
-  // Hàm xây dựng nút đăng nhập
-  Widget _buildLoginButton(BuildContext context) {
+  Widget _buildLoginForm() {
+    return Column(
+      children: [
+        _buildInputField(
+          controller: _mssvController,
+          label: 'MSSV',
+          hint: 'Nhập MSSV của bạn',
+          prefixIcon: Icons.person_outline,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Vui lòng nhập MSSV';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildInputField(
+          controller: _passwordController,
+          label: 'Mật khẩu',
+          hint: 'Nhập mật khẩu của bạn',
+          prefixIcon: Icons.lock_outline,
+          isPassword: true,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Vui lòng nhập mật khẩu';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 15),
+        _buildRememberPasswordRow(),
+      ],
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData prefixIcon,
+    bool isPassword = false,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: isPassword && !_isPasswordVisible,
+        validator: validator,
+        style: const TextStyle(fontSize: 16),
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+          prefixIcon: Icon(prefixIcon, color: lightColorScheme.primary),
+          suffixIcon: isPassword
+              ? IconButton(
+            icon: Icon(
+              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            ),
+            onPressed: () {
+              setState(() => _isPasswordVisible = !_isPasswordVisible);
+            },
+          )
+              : null,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRememberPasswordRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: rememberPassword,
+          onChanged: (value) {
+            setState(() => rememberPassword = value!);
+          },
+        ),
+        Text(
+          'Lưu thông tin đăng nhập',
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginButton() {
     return SizedBox(
       width: double.infinity,
+      height: 50,
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: _isLoading
+            ? null
+            : () {
           if (_formSignInKey.currentState!.validate()) {
             _loginWithMSSV(_mssvController.text, _passwordController.text);
           }
         },
-        child: const Text('Đăng nhập'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: lightColorScheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          'Đăng nhập',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForgotPassword() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ResetPasswordScreen()),
+        );
+      },
+      child: Text(
+        'Quên mật khẩu?',
+        style: TextStyle(
+          color: lightColorScheme.primary,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
