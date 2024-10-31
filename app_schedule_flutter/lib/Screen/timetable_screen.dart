@@ -263,6 +263,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
           ),
         ),
       ),
+      backgroundColor: Colors.white,
       body: isLoading
           ? Container(
         color: Colors.white,
@@ -272,8 +273,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
             children: [
               Image.asset(
                 'assets/images/tableload.gif',
-                width: 370,
-                height: 230,
+                width: 350,
+                height: 210,
                 fit: BoxFit.cover,
               ),
               SizedBox(height: 25),
@@ -317,7 +318,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
       )
 
           : Padding(
-        padding: const EdgeInsets.only(top: 25.0), // Khoảng cách 16 pixel từ phía trên
+          padding: const EdgeInsets.only(top: 25.0), // Khoảng cách 16 pixel từ phía trên
             child: ListView.builder(
                     itemCount: timetable.length,
                     itemBuilder: (context, index) {
@@ -332,6 +333,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
             return ListTile(
               title:Container(
+                color: Colors.white,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -410,7 +412,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       ],
                     ),
                     SizedBox(height: 5,),
-                    _buildDashedDivider(), // Thêm đường nét đứt bên dưới mỗi mục
+                    //_buildDashedDivider(), // Thêm đường nét đứt bên dưới mỗi mục
                   ],
                 ),
               )

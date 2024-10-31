@@ -1,15 +1,14 @@
 import 'dart:io';
-
 import 'package:app_schedule_flutter/Model/Event.dart';
 import 'package:app_schedule_flutter/Model/SaveEvent.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../Service/AuthService.dart';
 import '../Service/FirebaseService.dart';
 
