@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../Model/Class.dart';
 import '../Model/Room.dart';
 import '../Model/Subject.dart';
+import 'Detail_TimeTable_screen.dart';
 
 const double kDefaultPadding = 20.0;
 
@@ -332,6 +333,19 @@ class _TimetableScreenState extends State<TimetableScreen> {
             String formattedDate = "${DateFormat('EEEE', 'vi').format(scheduleDate)}, ngày ${DateFormat('dd/MM').format(scheduleDate)}";
 
             return ListTile(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScheduleDetailScreen(
+                      schedule: schedule,
+                      subject: subject,
+                      classInfo: classInfo,
+                      room: room,
+                    ),
+                  ),
+                );
+              },
               title:Container(
                 color: Colors.white,
                 child: Column(
