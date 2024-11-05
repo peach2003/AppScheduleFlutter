@@ -88,6 +88,14 @@ class _SaveEventScreenState extends State<SaveEventScreen> {
     }
     return Scaffold(
       appBar: AppBar(
+        leading: widget.isInDashboard
+            ? null
+            : IconButton(
+          icon: Icon(Icons.arrow_back_ios_new),
+          onPressed: (){
+            Navigator.pop(context);
+          },
+        ),
         backgroundColor: Colors.white,
         title: const Text(
           'Sự kiện đã đăng ký',

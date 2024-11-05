@@ -2,6 +2,7 @@ import 'package:app_schedule_flutter/Model/Schedule.dart';
 import 'package:app_schedule_flutter/Service/FirebaseService.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Model/Class.dart';
 import '../Model/Room.dart';
@@ -83,13 +84,29 @@ class _TimetableScreenState extends State<TimetableScreen> {
   Map<String, Class> classDetails = {};
   Map<String, Room> roomDetails = {};
   bool isWeeklyView = true; // Default to weekly view
+  String? userClaId;
 
   @override
   void initState() {
     super.initState();
     _initializeWeekRange();
-    _loadTimetable();
+    _loadClaIdAndTimetable();  // Chỉnh sửa ở đây
   }
+  // Lấy claid từ SharedPreferences và tải thời khóa biểu
+  Future<void> _loadClaIdAndTimetable() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    userClaId = prefs.getString('claid'); // Lấy claid đã lưu
+
+    if (userClaId != null) {
+      _loadTimetable();  // Gọi loadTimetable khi đã có claid
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      print("ClaID không tồn tại trong SharedPreferences");
+    }
+  }
+
   Future<void> _fetchAdditionalDetails(Schedule schedule) async {
     if (!subjectDetails.containsKey(schedule.subid)) {
       Subject? subject = await firebaseService.getSubjectById(schedule.subid);
@@ -143,7 +160,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
   // Load the timetable and filter for the current week
   void _loadTimetable() async {
-    firebaseService.listenToSchedules().listen((scheduleList) async {
+    firebaseService.listenToSchedules(userClaId!).listen((scheduleList) async {
       for (var schedule in scheduleList) {
         await _fetchAdditionalDetails(schedule);
       }
@@ -184,6 +201,14 @@ class _TimetableScreenState extends State<TimetableScreen> {
     List<DateTime> daysInMonth = _generateDaysInMonth(currentMonth);
     return Scaffold(
       appBar: AppBar(
+        leading: widget.isInDashboard
+            ? null
+            : IconButton(
+          icon:isWeeklyView? Icon(Icons.arrow_back_ios_new, color: Colors.white,):Icon(Icons.arrow_back_ios_new, color: Colors.black,),
+          onPressed: (){
+            Navigator.pop(context);
+          },
+        ),
         title: Text(
           'Thời khóa biểu',
           style: TextStyle(

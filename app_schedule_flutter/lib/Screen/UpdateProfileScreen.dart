@@ -14,7 +14,7 @@ class UpdateProfileScreen extends StatefulWidget {
 }
 
 class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref().child('students');
+  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final TextEditingController _mssvController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -23,7 +23,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   final TextEditingController _facultyController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  String? _imageUrl;
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -32,12 +32,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   }
 
   void _initializeControllers() {
-    _mssvController.text = widget.userInfo['stuid']?.toString() ?? '';
-    _nameController.text = widget.userInfo['stuname'] ?? '';
-    _emailController.text = widget.userInfo['gmail'] ?? '';
-    _classController.text = widget.userInfo['claname'] ?? '';
-    _facultyController.text = widget.userInfo['facuname'] ?? '';
-    _imageUrl = widget.userInfo['imageUrl'];
+    try {
+      _mssvController.text = widget.userInfo['stuid']?.toString() ?? '';
+      _nameController.text = widget.userInfo['stuname'] ?? '';
+      _emailController.text = widget.userInfo['gmail'] ?? '';
+      _classController.text = widget.userInfo['claid'] ?? 'Chưa có lớp';
+      _facultyController.text = widget.userInfo['facuname'] ?? 'Chưa có khoa';
+      _avatarUrl = widget.userInfo['avatar'];
+    } catch (e) {
+      print("Lỗi khi khởi tạo controllers: $e");
+    }
   }
 
   Future<void> _updateProfile() async {
@@ -46,26 +50,54 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
-      Map<String, dynamic> updatedData = {
-        'stuname': _nameController.text.trim(),
-        'gmail': _emailController.text.trim(),
-        'claname': _classController.text.trim(),
-        'facuname': _facultyController.text.trim(),
-      };
+      String stuid = widget.userInfo['stuid'].toString(); // ID sinh viên cần cập nhật
+      print("Đang tìm kiếm sinh viên với stuid: $stuid");
 
-      // Only update the image URL if a new image has been uploaded
-      if (_imageUrl != null) {
-        updatedData['imageUrl'] = _imageUrl;
-      }
+      // Lấy tất cả các sinh viên trong nhánh `students`
+      DataSnapshot snapshot = await _dbRef.child('students').get();
 
-      await _dbRef.child(widget.userInfo['stuid'].toString()).update(updatedData);
+      if (snapshot.exists) {
+        bool studentFound = false;
 
-      if (mounted) {
-        _showSuccessDialog();
+        // Duyệt qua từng bản ghi con trong `students`
+        for (var student in snapshot.children) {
+          Map<dynamic, dynamic> studentData = student.value as Map<dynamic, dynamic>;
+
+          // Kiểm tra xem `stuid` của bản ghi này có khớp không
+          if (studentData['stuid'].toString() == stuid) {
+            print("Tìm thấy sinh viên với stuid: $stuid. Đang cập nhật...");
+
+            // Cập nhật thông tin `gmail` và `avatar` (nếu có)
+            Map<String, dynamic> updatedData = {
+              'gmail': _emailController.text.trim(),
+            };
+
+            if (_avatarUrl != null) {
+              updatedData['avatar'] = _avatarUrl;
+            }
+
+            // Cập nhật dữ liệu tại bản ghi này mà không tạo bản ghi mới
+            await student.ref.update(updatedData);
+            studentFound = true;
+            if (mounted) {
+              _showSuccessDialog(); // Thông báo cập nhật thành công
+            }
+            break;
+          }
+        }
+
+        if (!studentFound) {
+          print("Không tìm thấy sinh viên với ID: $stuid trong cơ sở dữ liệu.");
+          _showErrorSnackBar('Không tìm thấy sinh viên với ID: $stuid');
+        }
+      } else {
+        print("Không có sinh viên nào trong cơ sở dữ liệu.");
+        _showErrorSnackBar('Không có sinh viên nào trong cơ sở dữ liệu.');
       }
     } catch (e) {
+      print("Lỗi khi cập nhật thông tin: $e");
       if (mounted) {
-        _showErrorSnackBar(e.toString());
+        _showErrorSnackBar('Lỗi khi cập nhật thông tin: $e');
       }
     } finally {
       if (mounted) {
@@ -73,6 +105,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       }
     }
   }
+
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -90,9 +123,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         TaskSnapshot snapshot = await uploadTask;
         String downloadUrl = await snapshot.ref.getDownloadURL();
 
-        setState(() => _imageUrl = downloadUrl);
+        setState(() => _avatarUrl = downloadUrl);
       } catch (e) {
-        _showErrorSnackBar('Error uploading image: $e');
+        _showErrorSnackBar('Lỗi khi tải ảnh: $e');
       } finally {
         setState(() => _isLoading = false);
       }
@@ -124,7 +157,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       ),
     );
   }
-
 
   void _showErrorSnackBar(String error) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -210,22 +242,19 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               color: Colors.black87,
             ),
           ),
-          // Remove the MSSV Text widget
-          // const SizedBox(height: 8), // You can keep this if you want some spacing
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-
   Widget _buildProfileImage() {
     return Stack(
       children: [
         CircleAvatar(
           radius: 60,
-          backgroundImage: _imageUrl != null
-              ? NetworkImage(_imageUrl!)
+          backgroundImage: _avatarUrl != null
+              ? NetworkImage(_avatarUrl!)
               : const AssetImage('assets/images/default_profile.png') as ImageProvider,
           backgroundColor: Colors.transparent,
         ),
@@ -262,59 +291,62 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   }
 
   Widget _buildForm() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildInputField(
-              controller: _mssvController,
-              label: 'MSSV',
-              icon: Icons.badge_outlined,
-              enabled: false,
-              backgroundColor: Colors.grey[100]!,
-            ),
-            const SizedBox(height: 16),
-            _buildInputField(
-              controller: _nameController,
-              label: 'Tên sinh viên',
-              icon: Icons.person_outline,
-              enabled: false,
-              backgroundColor: Colors.grey[100]!,
-            ),
-            const SizedBox(height: 16),
-            _buildInputField(
-              controller: _classController,
-              label: 'Lớp',
-              icon: Icons.class_outlined,
-              enabled: false,
-              backgroundColor: Colors.grey[100]!,
-            ),
-            const SizedBox(height: 16),
-            _buildInputField(
-              controller: _facultyController,
-              label: 'Khoa',
-              icon: Icons.school_outlined,
-              enabled: false,
-              backgroundColor: Colors.grey[100]!,
-            ),
-            const SizedBox(height: 16),
-            _buildInputField(
-              controller: _emailController,
-              label: 'Email',
-              icon: Icons.email_outlined,
-              enabled: true,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _updateProfile,
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Cập nhật thông tin'),
-            ),
-          ],
+    return Container(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildInputField(
+                controller: _mssvController,
+                label: 'MSSV',
+                icon: Icons.badge_outlined,
+                enabled: false,
+                backgroundColor: Colors.grey[100]!,
+              ),
+              const SizedBox(height: 16),
+              _buildInputField(
+                controller: _nameController,
+                label: 'Tên sinh viên',
+                icon: Icons.person_outline,
+                enabled: false,
+                backgroundColor: Colors.grey[100]!,
+              ),
+              const SizedBox(height: 16),
+              _buildInputField(
+                controller: _classController,
+                label: 'Lớp',
+                icon: Icons.class_outlined,
+                enabled: false,
+                backgroundColor: Colors.grey[100]!,
+              ),
+              const SizedBox(height: 16),
+              _buildInputField(
+                controller: _facultyController,
+                label: 'Khoa',
+                icon: Icons.school_outlined,
+                enabled: false,
+                backgroundColor: Colors.grey[100]!,
+              ),
+              const SizedBox(height: 16),
+              _buildInputField(
+                controller: _emailController,
+                label: 'Email',
+                icon: Icons.email_outlined,
+                enabled: true,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _updateProfile,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Cập nhật thông tin', style: TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
         ),
       ),
     );
