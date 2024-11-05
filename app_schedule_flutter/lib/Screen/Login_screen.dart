@@ -115,6 +115,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
               // Cập nhật trạng thái đăng nhập trong SharedPreferences
               SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString('userId', mssv);
               await prefs.setBool('isLoggedIn', true);
 
               Navigator.of(context).pop(); // Đóng loading dialog
