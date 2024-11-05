@@ -4,10 +4,13 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../Model/Class.dart';
+import '../Model/Faculty.dart';
 import 'UpdateProfileScreen.dart';
 import 'login_screen.dart';
 import 'dart:io';
 
+// ProfileScreen Widget
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
@@ -16,11 +19,10 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref().child(
-      'students');
+  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref().child('students');
   final FirebaseStorage _storage = FirebaseStorage.instance;
   Map<String, dynamic>? userInfo;
-  String? _imageUrl;
+  String? _avatarUrl;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -38,38 +40,75 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _animationController.forward();
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
   Future<void> _fetchUserData() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? mssv = prefs.getString('mssv');
+      print('MSSV từ SharedPreferences: $mssv');
 
       if (mssv != null) {
-        DataSnapshot snapshot = await _dbRef.orderByChild('stuid').equalTo(
-            int.parse(mssv)).get();
+        DataSnapshot studentSnapshot = await _dbRef.orderByChild('stuid').equalTo(int.parse(mssv)).get();
+        print('Student snapshot tồn tại: ${studentSnapshot.exists}');
 
-        if (snapshot.exists) {
-          Map<dynamic, dynamic> studentData = snapshot.value as Map<
-              dynamic,
-              dynamic>;
+        if (studentSnapshot.exists) {
+          Map<dynamic, dynamic> studentData = studentSnapshot.value as Map<dynamic, dynamic>;
+          print('Dữ liệu sinh viên: $studentData');
+
           if (studentData.isNotEmpty) {
+            Map<String, dynamic> student = Map<String, dynamic>.from(studentData.values.first);
+            print('Thông tin sinh viên đầu tiên: $student');
+
+            String? claid = student['claid']?.toString();
+            print('ClaID: $claid');
+
+            String className = 'Chưa có lớp';
+            String facultyName = 'Chưa có khoa';
+
+            if (claid != null) {
+              // Truy cập trực tiếp đến lớp theo claid mà không dùng orderByChild
+              DataSnapshot classSnapshot = await FirebaseDatabase.instance.ref().child('classes').child(claid).get();
+              print('Class snapshot tồn tại: ${classSnapshot.exists}');
+
+              if (classSnapshot.exists) {
+                Map<String, dynamic> classData = Map<String, dynamic>.from(classSnapshot.value as Map);
+                className = classData['claname'];
+                print('Tên lớp: $className');
+
+                // Truy xuất facid từ classData để lấy tên khoa từ bảng faculty
+                String facid = classData['facid'];
+                DataSnapshot facultySnapshot = await FirebaseDatabase.instance.ref().child('faculty').orderByChild('facid').equalTo(facid).get();
+                print('Faculty snapshot tồn tại: ${facultySnapshot.exists}');
+
+                if (facultySnapshot.exists) {
+                  Map<String, dynamic> facultyData = Map<String, dynamic>.from((facultySnapshot.value as Map).values.first);
+                  facultyName = facultyData['facname'];
+                  print('Tên khoa: $facultyName');
+                } else {
+                  print('Không tìm thấy thông tin khoa cho FacID: $facid');
+                }
+              } else {
+                print('Không tìm thấy thông tin lớp cho ClaID: $claid');
+              }
+            }
+
             setState(() {
-              userInfo = Map<String, dynamic>.from(studentData.values.first);
-              _imageUrl = userInfo!['imageUrl'] ??
-                  ''; // Lưu URL hình đại diện, mặc định là chuỗi rỗng
+              userInfo = student;
+              _avatarUrl = student['avatar'] ?? '';
+              userInfo!['claid'] = className;
+              userInfo!['facuname'] = facultyName;
             });
           }
+        } else {
+          print('Không tìm thấy dữ liệu sinh viên cho MSSV: $mssv');
         }
+      } else {
+        print('MSSV chưa được lưu trong SharedPreferences');
       }
     } catch (e) {
       print('Lỗi khi lấy dữ liệu sinh viên: $e');
     }
   }
+
 
 
   Future<void> _pickImage() async {
@@ -84,18 +123,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Future<void> _uploadImage(XFile image) async {
     try {
       final String fileName = 'profile_images/${userInfo!['stuid']}.jpg';
-      final UploadTask uploadTask = _storage.ref(fileName).putFile(
-          File(image.path));
+      final UploadTask uploadTask = _storage.ref(fileName).putFile(File(image.path));
       TaskSnapshot snapshot = await uploadTask;
 
       String downloadUrl = await snapshot.ref.getDownloadURL();
       setState(() {
-        _imageUrl = downloadUrl;
+        _avatarUrl = downloadUrl;
       });
 
       // Cập nhật URL vào Firebase Database
-      await _dbRef.child(userInfo!['stuid'].toString()).update(
-          {'imageUrl': downloadUrl});
+      await _dbRef.child(userInfo!['stuid'].toString()).update({'avatar': downloadUrl});
     } catch (e) {
       print('Lỗi khi tải lên hình ảnh: $e');
     }
@@ -115,35 +152,29 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context), // Đóng hộp thoại
+              onPressed: () => Navigator.pop(context),
               child: Text('Hủy', style: TextStyle(color: Colors.grey.shade600)),
             ),
             ElevatedButton(
               onPressed: () async {
-                // Xóa dữ liệu đăng nhập từ SharedPreferences
                 SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.clear(); // Xóa tất cả dữ liệu
+                await prefs.clear();
 
-                // Chuyển đến màn hình đăng nhập
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      (Route<
-                      dynamic> route) => false, // Loại bỏ tất cả các route trước đó
+                      (Route<dynamic> route) => false,
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red.shade400,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
               child: const Text(
                 'Đăng xuất',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -193,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           Row(
             children: [
               GestureDetector(
-                onTap: _pickImage, // Gọi hàm chọn hình khi nhấn vào avatar
+                onTap: _pickImage,
                 child: Container(
                   width: 70,
                   height: 70,
@@ -212,10 +243,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                   child: CircleAvatar(
                     backgroundColor: Colors.blue,
-                    backgroundImage: _imageUrl != null ? NetworkImage(
-                        _imageUrl!) : null,
-                    child: _imageUrl == null ? const Icon(
-                        Icons.person, size: 40, color: Colors.white) : null,
+                    backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                    child: _avatarUrl == null ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
                   ),
                 ),
               ),
@@ -245,8 +274,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                UpdateProfileScreen(userInfo: userInfo!),
+                            builder: (context) => UpdateProfileScreen(userInfo: {
+                              ...userInfo!, // Dữ liệu sinh viên hiện tại
+                              'claid': userInfo!['claid'] ?? 'Chưa có lớp', // Lớp
+                              'facuname': userInfo!['facuname'] ?? 'Chưa có khoa', // Khoa
+                            },),
                           ),
                         );
                         if (result != null) {
@@ -254,8 +286,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         }
                       },
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         backgroundColor: Colors.black12,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
@@ -291,7 +322,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-
   Widget _buildProfileInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,11 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
             'Tổng Quan',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
         const SizedBox(height: 8),
@@ -327,13 +353,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow(
-                  Icons.badge_outlined, "MSSV", userInfo!['stuid'].toString()),
+              _buildInfoRow(Icons.badge_outlined, "MSSV", userInfo!['stuid'].toString()),
               _buildInfoRow(Icons.email_outlined, "Email", userInfo!['gmail']),
-              _buildInfoRow(Icons.class_outlined, "Lớp",
-                  userInfo!['claname'] ?? 'Chưa có lớp'),
-              _buildInfoRow(Icons.school_outlined, "Khoa",
-                  userInfo!['facuname'] ?? 'Chưa có khoa'),
+              _buildInfoRow(Icons.class_outlined, "Lớp", userInfo!['claid'] ?? 'Chưa có lớp'),
+              _buildInfoRow(Icons.school_outlined, "Khoa", userInfo!['facuname'] ?? 'Chưa có khoa'),
             ],
           ),
         ),
@@ -361,20 +384,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
               ],
             ),
@@ -456,8 +471,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                   child: Icon(
                     icon,
-                    color: isLogout ? Colors.red.shade400 : Colors.blue
-                        .shade600,
+                    color: isLogout ? Colors.red.shade400 : Colors.blue.shade600,
                     size: 24,
                   ),
                 ),
@@ -468,20 +482,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isLogout ? Colors.red.shade400 : Colors
-                              .black87,
-                        ),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isLogout ? Colors.red.shade400 : Colors.black87),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                       ),
                     ],
                   ),
@@ -499,4 +505,3 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 }
-

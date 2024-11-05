@@ -126,8 +126,22 @@ class FirebaseService {
     return schedules;
   }
   // Lắng nghe sự thay đổi thời khóa biểu theo thời gian thực
-  Stream<List<Schedule>> listenToSchedules() {
-    return _scheduleRef.onValue.map((event) {
+  Stream<List<Schedule>> listenToSchedules(String claid) {
+    /*return _scheduleRef.onValue.map((event) {
+      List<Schedule> schedules = [];
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic> scheduleMap = event.snapshot.value as Map<dynamic, dynamic>;
+        scheduleMap.forEach((key, value) {
+          schedules.add(Schedule.fromSnapshot(value));
+        });
+      }
+      return schedules;
+    });*/
+    return _scheduleRef
+        .orderByChild('claid')
+        .equalTo(claid)
+        .onValue
+        .map((event) {
       List<Schedule> schedules = [];
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic> scheduleMap = event.snapshot.value as Map<dynamic, dynamic>;

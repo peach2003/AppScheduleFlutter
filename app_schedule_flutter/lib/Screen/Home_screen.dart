@@ -1,6 +1,8 @@
 import 'package:app_schedule_flutter/Screen/Dashboard.dart';
 import 'package:app_schedule_flutter/Screen/Detail_Event_screen.dart';
 import 'package:app_schedule_flutter/Screen/Event_screen.dart';
+import 'package:app_schedule_flutter/Screen/Save_Event_screen.dart';
+import 'package:app_schedule_flutter/Screen/timetable_screen.dart';
 import 'package:app_schedule_flutter/Service/FirebaseService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -343,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context)=> Dashboad(selectedIndex: 2,),
+                                builder: (context)=> TimetableScreen(),
                               )
                             );
                           }),
@@ -361,7 +363,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context)=> Dashboad(selectedIndex: 1,),
+                                  builder: (context)=> SaveEventScreen(),
                                 )
                             );
                           }),
