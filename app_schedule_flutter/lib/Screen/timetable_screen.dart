@@ -274,8 +274,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
             children: [
               Image.asset(
                 'assets/images/tableload.gif',
-                width: 350,
-                height: 210,
+                width: 370,
+                height: 230,
                 fit: BoxFit.cover,
               ),
               SizedBox(height: 25),
@@ -357,10 +357,15 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       style: TextStyle(color: Colors.red, fontSize: 18),
                     ),
                     SizedBox(
-                      height: 5,
+                      height: 3,
                     ),
                     Divider(
                       height: 0.5,
+                      color: Colors.green,
+                      //thickness: ,
+                    ),
+                    SizedBox(
+                      height: 10,
                     ),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +403,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             SizedBox(height: 5,),
                             Row(
                               children: [
-                                Icon(Icons.location_on_outlined, color: Colors.grey,size: 25,),
+                                Icon(Icons.location_on_outlined, color: Colors.green,size: 25,),
                                 Text(
                                   'Phòng: ${room?.rooname }',
                                   style: TextStyle(
@@ -413,7 +418,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             ),
                             Row(
                               children: [
-                                Icon(Icons.class_outlined, color: Colors.grey,size: 25,),
+                                Icon(Icons.class_outlined, color: Colors.green,size: 25,),
                                 Text(
                                   'Lớp: ${classInfo?.claname }',
                                   style: TextStyle(

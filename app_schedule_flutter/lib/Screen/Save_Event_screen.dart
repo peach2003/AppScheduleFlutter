@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../Service/FirebaseService.dart';
 import '../Model/SaveEvent.dart';
 import '../Model/Event.dart';
@@ -18,13 +19,22 @@ class _SaveEventScreenState extends State<SaveEventScreen> {
   FirebaseService firebaseService = FirebaseService();
   List<SaveEvent> saveEvents = [];
   Map<String, Event> eventDetails = {}; // Lưu trữ tất cả các sự kiện theo eventId
-
+  String? currentUserId;
+  bool isLoading = true; // Trạng thái chờ trong khi lấy userId
   @override
   void initState() {
     super.initState();
     _fetchEventDetails();
+    _initializeUserId();
   }
-
+  // Lấy userId từ SharedPreferences và đảm bảo userId được khởi tạo trước khi tiếp tục
+  Future<void> _initializeUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      currentUserId = prefs.getString('userId');
+      isLoading = false; // Đã tải xong userId
+    });
+  }
   // Lấy tất cả sự kiện và lưu vào Map theo eventId
   Future<void> _fetchEventDetails() async {
     List<Event> events = await firebaseService.getAllEvents();
@@ -48,8 +58,37 @@ class _SaveEventScreenState extends State<SaveEventScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      // Hiển thị một màn hình chờ nếu đang tải userId
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Sự kiện đã đăng ký',
+            style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    // Nếu không có userId, hiển thị thông báo lỗi
+    if (currentUserId == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Sự kiện đã đăng ký',
+            style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Text('Lỗi: Không thể tải dữ liệu người dùng.'),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text(
           'Sự kiện đã đăng ký',
           style: TextStyle(
@@ -68,7 +107,7 @@ class _SaveEventScreenState extends State<SaveEventScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<SaveEvent>>(
-              stream: firebaseService.listenToSavedEvents(), // Lắng nghe sự kiện theo thời gian thực
+              stream: firebaseService.listenToSavedEvents(currentUserId!), // Lắng nghe sự kiện theo thời gian thực
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());

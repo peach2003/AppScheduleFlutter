@@ -230,6 +230,7 @@ class _DetailEventState extends State<DetailEvent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new), // Thay thế icon mũi tên quay lại bằng icon khác
           onPressed: () {
@@ -246,6 +247,7 @@ class _DetailEventState extends State<DetailEvent> {
           ],
         ),
       ),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(16.0),
@@ -266,7 +268,7 @@ class _DetailEventState extends State<DetailEvent> {
                 'Ngày tạo: ${formatDate(widget.event.createdAt)}',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.grey
+                  color: Colors.grey.shade700
                 ),
               ),
               SizedBox(
