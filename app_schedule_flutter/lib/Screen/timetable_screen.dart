@@ -77,9 +77,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
   bool isLoading = true;
   DateTime currentWeekStart = DateTime.now();
   DateTime currentWeekEnd = DateTime.now();
+  DateTime selectedDate = DateTime.now();
+  DateTime currentMonth = DateTime.now();
   Map<String, Subject> subjectDetails = {};
   Map<String, Class> classDetails = {};
   Map<String, Room> roomDetails = {};
+  bool isWeeklyView = true; // Default to weekly view
 
   @override
   void initState() {
@@ -148,8 +151,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
       setState(() {
         timetable = scheduleList.where((schedule) {
           DateTime scheduleDate = DateFormat("yyyy-MM-dd").parse(schedule.daystart);
-          return scheduleDate.isAfter(currentWeekStart.subtract(Duration(days: 1))) &&
-              scheduleDate.isBefore(currentWeekEnd.add(Duration(milliseconds: 1)));
+          if (isWeeklyView) {
+            return scheduleDate.isAfter(currentWeekStart.subtract(Duration(days: 1))) &&
+                scheduleDate.isBefore(currentWeekEnd.add(Duration(milliseconds: 1)));
+          } else {
+            return scheduleDate.isAtSameMomentAs(selectedDate);
+          }
         }).toList();
 
         // Sort the timetable by day and time
@@ -162,25 +169,19 @@ class _TimetableScreenState extends State<TimetableScreen> {
       });
     });
   }
-
-  Widget _buildDashedDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: List.generate(100 ~/ 1, (index) => Expanded(
-          child: Container(
-            color: index % 2 == 0 ? Colors.transparent : Colors.grey,
-            height: 1,
-            width: index % 2 == 0 ? 3 : 6, // Điều chỉnh chiều dài dash và khoảng cách
-          ),
-        )),
-      ),
-    );
+  void _toggleView(bool weekly) {
+    setState(() {
+      isWeeklyView = weekly;
+      _loadTimetable();
+    });
   }
-
-
+  List<DateTime> _generateDaysInMonth(DateTime month) {
+    int daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    return List<DateTime>.generate(daysInMonth, (index) => DateTime(month.year, month.month, index + 1));
+  }
   @override
   Widget build(BuildContext context) {
+    List<DateTime> daysInMonth = _generateDaysInMonth(currentMonth);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -188,46 +189,52 @@ class _TimetableScreenState extends State<TimetableScreen> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 25,
-            color: Colors.white,
+            color:isWeeklyView? Colors.white:Colors.black ,
           ),
         ),
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: isWeeklyView?Colors.lightBlueAccent: Colors.white,
         elevation: 0,
         actions: [
           Row(
             children: [
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _toggleView(false),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.lightBlueAccent,
-                  backgroundColor: Colors.white,
+                  backgroundColor: isWeeklyView ? Colors.lightBlueAccent : Colors.green,
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
+                    side: BorderSide(
+                      color:isWeeklyView ? Colors.white : Colors.green,
+                    )
                   ),
                 ),
                 child: Text(
-                  'Ngày',
+                  'NGÀY',
                   style: TextStyle(
-                    color: Colors.lightBlueAccent,
+                    color: isWeeklyView ? Colors.black : Colors.white,
                     fontSize: 16,
                   ),
                 ),
               ),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _toggleView(true),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.lightBlueAccent,
-                  backgroundColor: Colors.white,
+                  backgroundColor: isWeeklyView ? Colors.green : Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
+                      side: BorderSide(
+                        color:isWeeklyView ? Colors.green : Colors.black54,
+                      )
                   ),
                 ),
                 child: Text(
-                  'Tuần',
+                  'TUẦN',
                   style: TextStyle(
-                    color: Colors.lightBlueAccent,
+                    color: isWeeklyView ? Colors.white : Colors.black,
                     fontSize: 16,
                   ),
                 ),
@@ -237,8 +244,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(40),
-          child: Padding(
+          preferredSize: isWeeklyView? Size.fromHeight(40): Size.fromHeight(100),
+          child: isWeeklyView? Padding(
             padding: const EdgeInsets.symmetric(vertical: 2.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -261,7 +268,71 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 ),
               ],
             ),
+          ):
+          Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    toBeginningOfSentenceCase(DateFormat('MMMM, yyyy', 'vi').format(currentMonth))!,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Container(
+                height: 70,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: daysInMonth.length,
+                  itemBuilder: (context, index) {
+                    DateTime date = daysInMonth[index];
+                    bool isSelected = date == selectedDate;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedDate = date;
+                          _loadTimetable();
+                        });
+                      },
+                      child: Container(
+                        width: 50,
+                        alignment: Alignment.center,
+                        margin: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.red : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              DateFormat('E', 'vi').format(date), // Hiển thị thứ (ngày trong tuần)
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.black,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              '${date.day}', // Hiển thị ngày
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.black,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
+
         ),
       ),
       backgroundColor: Colors.white,
@@ -274,8 +345,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
             children: [
               Image.asset(
                 'assets/images/tableload.gif',
-                width: 350,
-                height: 210,
+                width: 370,
+                height: 230,
                 fit: BoxFit.cover,
               ),
               SizedBox(height: 25),
@@ -357,10 +428,15 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       style: TextStyle(color: Colors.red, fontSize: 18),
                     ),
                     SizedBox(
-                      height: 5,
+                      height: 3,
                     ),
                     Divider(
                       height: 0.5,
+                      color: Colors.green,
+                      //thickness: ,
+                    ),
+                    SizedBox(
+                      height: 10,
                     ),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +474,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             SizedBox(height: 5,),
                             Row(
                               children: [
-                                Icon(Icons.location_on_outlined, color: Colors.grey,size: 25,),
+                                Icon(Icons.location_on_outlined, color: Colors.green,size: 25,),
                                 Text(
                                   'Phòng: ${room?.rooname }',
                                   style: TextStyle(
@@ -413,7 +489,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             ),
                             Row(
                               children: [
-                                Icon(Icons.class_outlined, color: Colors.grey,size: 25,),
+                                Icon(Icons.class_outlined, color: Colors.green,size: 25,),
                                 Text(
                                   'Lớp: ${classInfo?.claname }',
                                   style: TextStyle(

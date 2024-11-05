@@ -5,6 +5,7 @@ import '../Model/Event.dart';
 import '../Model/Room.dart';
 import '../Model/Schedule.dart';
 import '../Model/Subject.dart';
+import '../Model/Teacher.dart';
 
 class FirebaseService {
   final DatabaseReference _eventRef = FirebaseDatabase.instance.ref().child('events');
@@ -13,6 +14,8 @@ class FirebaseService {
   final DatabaseReference _classRef = FirebaseDatabase.instance.ref().child('classes');
   final DatabaseReference _roomRef = FirebaseDatabase.instance.ref().child('rooms');
   final DatabaseReference _subjectRef = FirebaseDatabase.instance.ref().child('subjects');
+  final DatabaseReference _teacherRef = FirebaseDatabase.instance.ref().child('teachers');
+  final DatabaseReference _teaSubRef = FirebaseDatabase.instance.ref().child('tea_sub');
   final database = FirebaseDatabase.instance;
   // Trả về tham chiếu tới nhánh 'events' để có thể lắng nghe thay đổi
   DatabaseReference getEventRef() {
@@ -79,9 +82,13 @@ class FirebaseService {
     });
   }
 
-  // Hàm mới: Lắng nghe sự thay đổi của sự kiện đã đăng ký theo thời gian thực từ 'save_events'
-  Stream<List<SaveEvent>> listenToSavedEvents() {
-    return _saveEventRef.onValue.map((event) {
+  // Lắng nghe sự kiện đã đăng ký theo userId
+  Stream<List<SaveEvent>> listenToSavedEvents(String userId) {
+    return _saveEventRef
+        .orderByChild('userId')
+        .equalTo(userId)
+        .onValue
+        .map((event) {
       List<SaveEvent> savedEvents = [];
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic> savedEventMap = event.snapshot.value as Map<dynamic, dynamic>;
@@ -166,6 +173,53 @@ class FirebaseService {
       }
     } catch (e) {
       print("Lỗi khi lấy phòng học: $e");
+    }
+    return null;
+  }
+  Future<String?> getTeacherIdBySubjectId(String subId) async {
+    try {
+      print("Đang lấy teaid cho subid: $subId");
+      DataSnapshot snapshot = await _teaSubRef.orderByChild('subid').equalTo(subId).get();
+
+      if (snapshot.exists) {
+        if (snapshot.value is List) {
+          // Nếu kết quả là một danh sách
+          List<dynamic> teaSubList = snapshot.value as List<dynamic>;
+          for (var item in teaSubList) {
+            if (item != null && item['subid'] == subId) {
+              String teaid = item['teaid'].toString();
+              print("Tìm thấy teaid: $teaid cho subid: $subId");
+              return teaid;
+            }
+          }
+        } else if (snapshot.value is Map) {
+          // Nếu kết quả là một bản đồ
+          Map<dynamic, dynamic> teaSubMap = snapshot.value as Map<dynamic, dynamic>;
+          String teaid = teaSubMap.values.first['teaid'].toString();
+          print("Tìm thấy teaid: $teaid cho subid: $subId");
+          return teaid;
+        } else {
+          print("Dữ liệu trả về không đúng kiểu List hoặc Map.");
+        }
+      } else {
+        print("Không tìm thấy dữ liệu trong tea_sub cho subid: $subId");
+      }
+    } catch (e) {
+      print("Lỗi khi lấy teaid từ subid: $e");
+    }
+    return null;
+  }
+
+
+  // Lấy thông tin giáo viên từ teaid
+  Future<Teacher?> getTeacherById(String teaid) async {
+    try {
+      DataSnapshot snapshot = await _teacherRef.child(teaid).get();
+      if (snapshot.exists) {
+        return Teacher.fromSnapshot(Map<String, dynamic>.from(snapshot.value as Map<dynamic, dynamic>));
+      }
+    } catch (e) {
+      print("Lỗi khi lấy thông tin giáo viên từ teaid: $e");
     }
     return null;
   }
