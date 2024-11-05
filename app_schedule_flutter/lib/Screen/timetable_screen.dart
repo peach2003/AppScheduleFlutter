@@ -347,6 +347,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 );
               },
               title:Container(
+
                 color: Colors.white,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
