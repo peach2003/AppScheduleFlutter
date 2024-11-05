@@ -1,9 +1,12 @@
 import 'package:app_schedule_flutter/Screen/timetable_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'UpdateProfileScreen.dart';
 import 'login_screen.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -13,8 +16,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref().child('students');
+  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref().child(
+      'students');
+  final FirebaseStorage _storage = FirebaseStorage.instance;
   Map<String, dynamic>? userInfo;
+  String? _imageUrl;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -44,13 +50,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       String? mssv = prefs.getString('mssv');
 
       if (mssv != null) {
-        DataSnapshot snapshot = await _dbRef.orderByChild('stuid').equalTo(int.parse(mssv)).get();
+        DataSnapshot snapshot = await _dbRef.orderByChild('stuid').equalTo(
+            int.parse(mssv)).get();
 
         if (snapshot.exists) {
-          Map<dynamic, dynamic> studentData = snapshot.value as Map<dynamic, dynamic>;
+          Map<dynamic, dynamic> studentData = snapshot.value as Map<
+              dynamic,
+              dynamic>;
           if (studentData.isNotEmpty) {
             setState(() {
               userInfo = Map<String, dynamic>.from(studentData.values.first);
+              _imageUrl = userInfo!['imageUrl'] ??
+                  ''; // Lưu URL hình đại diện, mặc định là chuỗi rỗng
             });
           }
         }
@@ -60,12 +71,43 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
+
+  Future<void> _pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      await _uploadImage(image);
+    }
+  }
+
+  Future<void> _uploadImage(XFile image) async {
+    try {
+      final String fileName = 'profile_images/${userInfo!['stuid']}.jpg';
+      final UploadTask uploadTask = _storage.ref(fileName).putFile(
+          File(image.path));
+      TaskSnapshot snapshot = await uploadTask;
+
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      setState(() {
+        _imageUrl = downloadUrl;
+      });
+
+      // Cập nhật URL vào Firebase Database
+      await _dbRef.child(userInfo!['stuid'].toString()).update(
+          {'imageUrl': downloadUrl});
+    } catch (e) {
+      print('Lỗi khi tải lên hình ảnh: $e');
+    }
+  }
+
   Future<void> _logout() async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
           title: const Text(
             'Xác nhận đăng xuất',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -86,18 +128,22 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      (Route<dynamic> route) => false, // Loại bỏ tất cả các route trước đó
+                      (Route<
+                      dynamic> route) => false, // Loại bỏ tất cả các route trước đó
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red.shade400,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 10),
               ),
               child: const Text(
                 'Đăng xuất',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -105,7 +151,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -147,28 +192,34 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           const SizedBox(height: 10),
           Row(
             children: [
-              Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 15,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const CircleAvatar(
-                  backgroundColor: Colors.blue,
-                  child: Icon(Icons.person, size: 40, color: Colors.white), // Thay đổi kích thước icon
+              GestureDetector(
+                onTap: _pickImage, // Gọi hàm chọn hình khi nhấn vào avatar
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.blue,
+                    backgroundImage: _imageUrl != null ? NetworkImage(
+                        _imageUrl!) : null,
+                    child: _imageUrl == null ? const Icon(
+                        Icons.person, size: 40, color: Colors.white) : null,
+                  ),
                 ),
               ),
-              const SizedBox(width: 16), // Điều chỉnh khoảng cách bên trái của avatar
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,7 +245,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => UpdateProfileScreen(userInfo: userInfo!),
+                            builder: (context) =>
+                                UpdateProfileScreen(userInfo: userInfo!),
                           ),
                         );
                         if (result != null) {
@@ -202,7 +254,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         }
                       },
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         backgroundColor: Colors.black12,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
@@ -221,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             'Cập nhật thông tin cá nhân',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 10, // Giảm kích thước fontSize của chữ "Cập nhật thông tin"
+                              fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -274,19 +327,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow(Icons.badge_outlined, "MSSV", userInfo!['stuid'].toString()),
+              _buildInfoRow(
+                  Icons.badge_outlined, "MSSV", userInfo!['stuid'].toString()),
               _buildInfoRow(Icons.email_outlined, "Email", userInfo!['gmail']),
-              _buildInfoRow(Icons.class_outlined, "Lớp", userInfo!['claname'] ?? 'Chưa có lớp'),
-              _buildInfoRow(Icons.school_outlined, "Khoa", userInfo!['facuname'] ?? 'Chưa có khoa'),
-
-              // Các thông tin khác nếu cần thêm
+              _buildInfoRow(Icons.class_outlined, "Lớp",
+                  userInfo!['claname'] ?? 'Chưa có lớp'),
+              _buildInfoRow(Icons.school_outlined, "Khoa",
+                  userInfo!['facuname'] ?? 'Chưa có khoa'),
             ],
           ),
         ),
       ],
     );
   }
-
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
@@ -403,7 +456,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                   child: Icon(
                     icon,
-                    color: isLogout ? Colors.red.shade400 : Colors.blue.shade600,
+                    color: isLogout ? Colors.red.shade400 : Colors.blue
+                        .shade600,
                     size: 24,
                   ),
                 ),
@@ -417,7 +471,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: isLogout ? Colors.red.shade400 : Colors.black87,
+                          color: isLogout ? Colors.red.shade400 : Colors
+                              .black87,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -444,3 +499,4 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 }
+
