@@ -1,9 +1,11 @@
+
 import 'package:app_schedule_flutter/Screen/Dashboard.dart';
 import 'package:app_schedule_flutter/Screen/Home_screen.dart';
 import 'package:app_schedule_flutter/Screen/Reset_Password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../Admin/Admindashboard.dart';
 import '../Theme/theme.dart';
 import '../Wigets/custom_scaffold.dart';
 
@@ -82,10 +84,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 const SizedBox(height: 15),
                 const Text(
                   'Đang đăng nhập...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -98,53 +97,107 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Future<void> _loginWithMSSV(String mssv, String password) async {
     if (!_isLoading) {
       setState(() => _isLoading = true);
-      _showLoadingDialog(); // Hiển thị loading dialog
+      _showLoadingDialog();
 
       try {
-        DatabaseReference ref = FirebaseDatabase.instance.ref().child('students');
-        DataSnapshot snapshot = await ref.orderByChild('stuid').equalTo(int.parse(mssv)).get();
+        final int parsedMssv = int.parse(mssv);
 
-        await Future.delayed(const Duration(seconds: 2)); // Để loading hiển thị rõ hơn
+        // Check account in the students table
+        DatabaseReference studentRef = FirebaseDatabase.instance.ref().child('students');
+        DataSnapshot studentSnapshot = await studentRef.orderByChild('stuid').equalTo(parsedMssv).get();
 
-        if (snapshot.exists) {
-          Map<dynamic, dynamic> studentData = snapshot.value as Map<dynamic, dynamic>;
-          if (studentData.isNotEmpty) {
-            String storedPassword = studentData.values.first['password'];
-            if (storedPassword == password) {
-              await _rememberPassword();
+        // Check account in the admins table
+        DatabaseReference adminRef = FirebaseDatabase.instance.ref().child('admins');
+        DataSnapshot adminSnapshot = await adminRef.orderByChild('adminid').equalTo(parsedMssv).get();
 
-              // Cập nhật trạng thái đăng nhập trong SharedPreferences
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              await prefs.setString('userId', mssv);
-              await prefs.setBool('isLoggedIn', true);
-              // Lấy claid từ dữ liệu người dùng và lưu vào SharedPreferences
-              String claid = studentData.values.first['claid'];
-              await prefs.setString('claid', claid); // Lưu claid vào SharedPreferences
-
-
-              Navigator.of(context).pop(); // Đóng loading dialog
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => Dashboad()), // Điều hướng đến Dashboard
-              );
-            } else {
-              Navigator.of(context).pop();
-              _showErrorSnackBar('Mật khẩu không đúng');
-            }
+        if (studentSnapshot.exists) {
+          // Ensure that the snapshot value is a Map
+          var studentData = studentSnapshot.value;
+          if (studentData is List) {
+            studentData = studentData.firstWhere(
+                  (element) => element != null,
+              orElse: () => null,
+            );
           }
+          Map<dynamic, dynamic>? studentMap = studentData as Map<dynamic, dynamic>?;
 
+          if (studentMap != null && studentMap['password'] == password) {
+            await _rememberPassword();
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('userId', mssv);
+            await prefs.setBool('isLoggedIn', true);
+
+            Navigator.of(context).pop();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Dashboad()),
+            );
+            return;
+          } else {
+            Navigator.of(context).pop();
+            _showErrorSnackBar('Mật khẩu không đúng');
+            return;
+          }
+        }
+
+        if (adminSnapshot.exists) {
+          // Ensure that the snapshot value is a Map
+          var adminData = adminSnapshot.value;
+          if (adminData is List) {
+            adminData = adminData.firstWhere(
+                  (element) => element != null,
+              orElse: () => null,
+            );
+          }
+          Map<dynamic, dynamic>? adminMap = adminData as Map<dynamic, dynamic>?;
+
+          if (adminMap != null && adminMap['password'] == password) {
+            await _rememberPassword();
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('userId', mssv);
+            await prefs.setBool('isLoggedIn', true);
+
+            Navigator.of(context).pop();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => admindashboard()),
+            );
+          } else {
+            Navigator.of(context).pop();
+            _showErrorSnackBar('Mật khẩu không đúng');
+          }
         } else {
           Navigator.of(context).pop();
-          _showErrorSnackBar('MSSV không tồn tại');
+          _showErrorSnackBar('Tài khoản không tồn tại');
         }
       } catch (e) {
         Navigator.of(context).pop();
-        _showErrorSnackBar('Đã có lỗi xảy ra. Vui lòng thử lại sau.');
+        _showErrorSnackBar('Đã có lỗi xảy ra. Vui lòng thử lại sau.\nLỗi: $e');
       } finally {
         setState(() => _isLoading = false);
       }
     }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

@@ -15,7 +15,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Khởi tạo Firebase
-  await Firebase.initializeApp().then((value) {
+  // await Firebase.initializeApp().then((value) {
+  //   print('Firebase initialized');
+  // }).catchError((error) {
+  //   print('Firebase initialization error: $error');
+  // });
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  ).then((value) {
     print('Firebase initialized');
   }).catchError((error) {
     print('Firebase initialization error: $error');
