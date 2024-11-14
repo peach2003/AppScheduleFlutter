@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../Screen/Login_screen.dart';
 
 class admindashboard extends StatefulWidget {
   const admindashboard({super.key});
@@ -9,6 +12,54 @@ class admindashboard extends StatefulWidget {
 }
 
 class _admindashboardState extends State<admindashboard> {
+  Future<void> _logout() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Xác nhận đăng xuất',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Hủy', style: TextStyle(color: Colors.grey.shade600)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade400,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text(
+                'Đăng xuất',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,29 +85,35 @@ class _admindashboardState extends State<admindashboard> {
                         title: 'Sinh Viên',
                         svgSrc: "assets/images/icondashboard.svg",
                         press: () {
-                          // Xử lý khi nhấn vào Dashboard
+                          // Xử lý khi nhấn vào Sinh Viên
                         },
                       ),
                       DrawerListTile(
                         title: 'Giảng Viên',
                         svgSrc: "assets/images/icondashboard.svg",
                         press: () {
-                          // Xử lý khi nhấn vào Dashboard
+                          // Xử lý khi nhấn vào Giảng Viên
                         },
                       ),
                       DrawerListTile(
                         title: 'Lớp',
                         svgSrc: "assets/images/icondashboard.svg",
                         press: () {
-                          // Xử lý khi nhấn vào Dashboard
+                          // Xử lý khi nhấn vào Lớp
                         },
                       ),
                       DrawerListTile(
                         title: 'Sự Kiện',
                         svgSrc: "assets/images/icondashboard.svg",
                         press: () {
-                          // Xử lý khi nhấn vào Dashboard
+                          // Xử lý khi nhấn vào Sự Kiện
                         },
+                      ),
+                      Divider(),
+                      DrawerListTile(
+                        title: 'Đăng Xuất',
+                        svgSrc: "assets/images/iconlogout.svg",
+                        press: _logout,
                       ),
                     ],
                   ),

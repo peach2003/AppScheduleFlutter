@@ -94,6 +94,82 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+
+  // Future<void> _loginWithMSSV(String mssv, String password) async {
+  //   if (!_isLoading) {
+  //     setState(() => _isLoading = true);
+  //     _showLoadingDialog();
+  //
+  //     try {
+  //       final int parsedMssv = int.parse(mssv);
+  //
+  //       // Kiểm tra tài khoản trong bảng students
+  //       DatabaseReference studentRef = FirebaseDatabase.instance.ref().child('students');
+  //       DataSnapshot studentSnapshot = await studentRef.orderByChild('stuid').equalTo(parsedMssv).get();
+  //
+  //       // Kiểm tra tài khoản trong bảng admins
+  //       DatabaseReference adminRef = FirebaseDatabase.instance.ref().child('admins');
+  //       DataSnapshot adminSnapshot = await adminRef.orderByChild('adminid').equalTo(parsedMssv).get();
+  //
+  //       if (studentSnapshot.exists) {
+  //         print("Dữ liệu từ students: ${studentSnapshot.value}");
+  //
+  //         Map<dynamic, dynamic>? studentMap = studentSnapshot.value as Map<dynamic, dynamic>?;
+  //         if (studentMap != null) {
+  //           var studentData = studentMap.values.first; // Lấy phần tử đầu tiên trong studentMap.values
+  //
+  //           if (studentData['password'] == password) {
+  //             await _rememberPassword();
+  //             SharedPreferences prefs = await SharedPreferences.getInstance();
+  //             await prefs.setString('userId', mssv);
+  //             await prefs.setBool('isLoggedIn', true);
+  //
+  //             Navigator.of(context).pop();
+  //             Navigator.pushReplacement(
+  //               context,
+  //               MaterialPageRoute(builder: (context) => Dashboad()),
+  //             );
+  //             return;
+  //           } else {
+  //             Navigator.of(context).pop();
+  //             _showErrorSnackBar('Mật khẩu không đúng');
+  //             return;
+  //           }
+  //         }
+  //       }
+  //
+  //       if (adminSnapshot.exists) {
+  //         // Thêm dòng print để kiểm tra dữ liệu
+  //         print("Dữ liệu từ admins: ${adminSnapshot.value}");
+  //
+  //         Map<dynamic, dynamic>? adminMap = adminSnapshot.value as Map<dynamic, dynamic>?;
+  //         if (adminMap != null && adminMap['password'] == password) {
+  //           await _rememberPassword();
+  //           SharedPreferences prefs = await SharedPreferences.getInstance();
+  //           await prefs.setString('userId', mssv);
+  //           await prefs.setBool('isLoggedIn', true);
+  //
+  //           Navigator.of(context).pop();
+  //           Navigator.pushReplacement(
+  //             context,
+  //             MaterialPageRoute(builder: (context) => admindashboard()),
+  //           );
+  //         } else {
+  //           Navigator.of(context).pop();
+  //           _showErrorSnackBar('Mật khẩu không đúng');
+  //         }
+  //       } else {
+  //         Navigator.of(context).pop();
+  //         _showErrorSnackBar('Tài khoản không tồn tại');
+  //       }
+  //     } catch (e) {
+  //       Navigator.of(context).pop();
+  //       _showErrorSnackBar('Đã có lỗi xảy ra. Vui lòng thử lại sau.\nLỗi: $e');
+  //     } finally {
+  //       setState(() => _isLoading = false);
+  //     }
+  //   }
+  // }
   Future<void> _loginWithMSSV(String mssv, String password) async {
     if (!_isLoading) {
       setState(() => _isLoading = true);
@@ -102,69 +178,133 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       try {
         final int parsedMssv = int.parse(mssv);
 
-        // Check account in the students table
+        // Kiểm tra tài khoản trong bảng students
         DatabaseReference studentRef = FirebaseDatabase.instance.ref().child('students');
         DataSnapshot studentSnapshot = await studentRef.orderByChild('stuid').equalTo(parsedMssv).get();
 
-        // Check account in the admins table
+        // Kiểm tra tài khoản trong bảng admins
         DatabaseReference adminRef = FirebaseDatabase.instance.ref().child('admins');
         DataSnapshot adminSnapshot = await adminRef.orderByChild('adminid').equalTo(parsedMssv).get();
 
+        // Kiểm tra nếu tài khoản là sinh viên
         if (studentSnapshot.exists) {
-          // Ensure that the snapshot value is a Map
-          var studentData = studentSnapshot.value;
-          if (studentData is List) {
-            studentData = studentData.firstWhere(
-                  (element) => element != null,
+          print("Dữ liệu từ students: ${studentSnapshot.value}");
+
+          if (studentSnapshot.value is Map) {
+            // Nếu dữ liệu là Map, chuyển sang kiểu Map để xử lý
+            Map<dynamic, dynamic> studentMap = studentSnapshot.value as Map<dynamic, dynamic>;
+
+            // Tìm kiếm sinh viên theo stuid
+            var studentData = studentMap.values.firstWhere(
+                  (student) => student['stuid'] == parsedMssv,
               orElse: () => null,
             );
-          }
-          Map<dynamic, dynamic>? studentMap = studentData as Map<dynamic, dynamic>?;
 
-          if (studentMap != null && studentMap['password'] == password) {
-            await _rememberPassword();
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setString('userId', mssv);
-            await prefs.setBool('isLoggedIn', true);
+            if (studentData != null && studentData['password'] == password) {
+              // Lưu thông tin đăng nhập
+              await _rememberPassword();
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString('userId', mssv);
+              await prefs.setBool('isLoggedIn', true);
 
-            Navigator.of(context).pop();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => Dashboad()),
+              Navigator.of(context).pop();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => Dashboad()), // Trang dashboard sinh viên
+              );
+              return;
+            } else {
+              Navigator.of(context).pop();
+              _showErrorSnackBar('Mật khẩu không đúng');
+              return;
+            }
+          } else if (studentSnapshot.value is List) {
+            // Nếu dữ liệu là List, xử lý theo cách của List
+            List<dynamic> studentList = studentSnapshot.value as List<dynamic>;
+
+            // Tìm kiếm sinh viên theo stuid
+            var studentData = studentList.firstWhere(
+                  (student) => student['stuid'] == parsedMssv,
+              orElse: () => null,
             );
-            return;
-          } else {
-            Navigator.of(context).pop();
-            _showErrorSnackBar('Mật khẩu không đúng');
-            return;
+
+            if (studentData != null && studentData['password'] == password) {
+              // Lưu thông tin đăng nhập
+              await _rememberPassword();
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString('userId', mssv);
+              await prefs.setBool('isLoggedIn', true);
+
+              Navigator.of(context).pop();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => Dashboad()), // Trang dashboard sinh viên
+              );
+              return;
+            } else {
+              Navigator.of(context).pop();
+              _showErrorSnackBar('Mật khẩu không đúng');
+              return;
+            }
           }
         }
 
+        // Kiểm tra nếu tài khoản là admin
         if (adminSnapshot.exists) {
-          // Ensure that the snapshot value is a Map
-          var adminData = adminSnapshot.value;
-          if (adminData is List) {
-            adminData = adminData.firstWhere(
-                  (element) => element != null,
+          print("Dữ liệu từ admins: ${adminSnapshot.value}");
+
+          if (adminSnapshot.value is Map) {
+            // Nếu dữ liệu là Map, chuyển sang kiểu Map để xử lý
+            Map<dynamic, dynamic> adminMap = adminSnapshot.value as Map<dynamic, dynamic>;
+
+            // Tìm kiếm admin theo adminid
+            var adminData = adminMap.values.firstWhere(
+                  (admin) => admin['adminid'] == parsedMssv,
               orElse: () => null,
             );
-          }
-          Map<dynamic, dynamic>? adminMap = adminData as Map<dynamic, dynamic>?;
 
-          if (adminMap != null && adminMap['password'] == password) {
-            await _rememberPassword();
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setString('userId', mssv);
-            await prefs.setBool('isLoggedIn', true);
+            if (adminData != null && adminData['password'] == password) {
+              // Lưu thông tin đăng nhập
+              await _rememberPassword();
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString('userId', mssv);
+              await prefs.setBool('isLoggedIn', true);
 
-            Navigator.of(context).pop();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => admindashboard()),
+              Navigator.of(context).pop();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => admindashboard()), // Trang dashboard admin
+              );
+            } else {
+              Navigator.of(context).pop();
+              _showErrorSnackBar('Mật khẩu không đúng');
+            }
+          } else if (adminSnapshot.value is List) {
+            // Nếu dữ liệu là List, xử lý theo cách của List
+            List<dynamic> adminList = adminSnapshot.value as List<dynamic>;
+
+            // Tìm kiếm admin theo adminid
+            var adminData = adminList.firstWhere(
+                  (admin) => admin['adminid'] == parsedMssv,
+              orElse: () => null,
             );
-          } else {
-            Navigator.of(context).pop();
-            _showErrorSnackBar('Mật khẩu không đúng');
+
+            if (adminData != null && adminData['password'] == password) {
+              // Lưu thông tin đăng nhập
+              await _rememberPassword();
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString('userId', mssv);
+              await prefs.setBool('isLoggedIn', true);
+
+              Navigator.of(context).pop();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => admindashboard()), // Trang dashboard admin
+              );
+            } else {
+              Navigator.of(context).pop();
+              _showErrorSnackBar('Mật khẩu không đúng');
+            }
           }
         } else {
           Navigator.of(context).pop();
@@ -178,22 +318,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       }
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
