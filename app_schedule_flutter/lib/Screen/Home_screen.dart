@@ -310,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     icon: Icon(
                                       Icons.notifications_none,
                                       size: 30,
-                                      color: notificationCount > 0 ? Colors.red : null,  // Nếu có thông báo chưa đọc, icon sẽ màu đỏ
+                                      color: notificationCount > 0 ? Colors.red : null, // Nếu có thông báo chưa đọc, icon sẽ màu đỏ
                                     ),
                                     onPressed: () {
                                       // Chuyển đến trang thông báo khi nhấn nút
@@ -320,6 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       );
                                     },
                                   ),
+
                                   FutureBuilder<String>(
                                     future: getAvatarUrlFromFirebase(), // Hàm lấy URL avatar từ Firebase
                                     builder: (context, snapshot) {
