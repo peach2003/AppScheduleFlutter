@@ -1,9 +1,11 @@
 import 'package:app_schedule_flutter/Screen/Dashboard.dart';
 import 'package:app_schedule_flutter/Screen/Detail_Event_screen.dart';
 import 'package:app_schedule_flutter/Screen/Event_screen.dart';
+import 'package:app_schedule_flutter/Screen/NotificationScreen.dart';
 import 'package:app_schedule_flutter/Screen/Save_Event_screen.dart';
 import 'package:app_schedule_flutter/Screen/timetable_screen.dart';
 import 'package:app_schedule_flutter/Service/FirebaseService.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -30,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   FirebaseService firebaseService= FirebaseService();
   List<Event> events=[];
   Event? latesEvent;
-
+  int notificationCount = 0;
 
   @override
   void initState() {
@@ -44,6 +46,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchEvents();
     _loadWeatherFromPreferences(); // Tải dữ liệu từ shared_preferences khi khởi động
   }
+
+  // Hàm lấy số lượng thông báo chưa đọc từ Firebase
+  void _getNotificationCount() async {
+    // Truy vấn Firebase Realtime Database để lấy thông báo chưa đọc
+    final snapshot = await FirebaseDatabase.instance
+        .ref('notifications')  // Truy cập vào nhánh "notifications"
+        .orderByChild('isRead')  // Sắp xếp theo trường 'isRead'
+        .equalTo(false)  // Lọc các thông báo chưa đọc (isRead = false)
+        .get();
+
+    // Cập nhật lại giá trị số lượng thông báo chưa đọc
+    setState(() {
+      notificationCount = snapshot.children.length;  // Đếm số lượng thông báo chưa đọc
+    });
+  }
+
+
   Future<void> _fetchEvents() async {
     firebaseService.getEventRef().onValue.listen((event) {
       final dataSnapshot = event.snapshot;
@@ -286,40 +305,53 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               Row(
                                 children: [
+                                  SizedBox(width: 10),
                                   IconButton(
-                                    icon: Icon(Icons.notifications_none, size: 30),
+                                    icon: Icon(
+                                      Icons.notifications_none,
+                                      size: 30,
+                                      color: notificationCount > 0 ? Colors.red : null,  // Nếu có thông báo chưa đọc, icon sẽ màu đỏ
+                                    ),
                                     onPressed: () {
-                                      // Chức năng thông báo ở đây
+                                      // Chuyển đến trang thông báo khi nhấn nút
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => NotificationScreen()),
+                                      );
                                     },
                                   ),
-                                  SizedBox(width: 10),
-                                  CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                        'https://th.bing.com/th/id/R.ea888ce8ab1a32ebdf8aac4a3ba23263?rik=ysYySzGU8J%2bzzQ&riu=http%3a%2f%2fwww.healthyfoodhouse.com%2fwp-content%2fuploads%2f2012%2f10%2fhealthy-drinks.jpg&ehk=WWaIyOgZ3UgnS%2fLWh%2bRowgeG3SHc18ccBN5bqmP9ruk%3d&risl=&pid=ImgRaw&r=0'),
-                                    radius: 20,
-                                  )
+                                  FutureBuilder<String>(
+                                    future: getAvatarUrlFromFirebase(), // Hàm lấy URL avatar từ Firebase
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                        return CircularProgressIndicator(); // Hiển thị loading nếu đang tải
+                                      } else if (snapshot.hasError) {
+                                        return CircleAvatar( // Trả về avatar mặc định nếu lỗi xảy ra
+                                          backgroundImage: NetworkImage('https://th.bing.com/th/id/R.ea888ce8ab1a32ebdf8aac4a3ba23263?rik=ysYySzGU8J%2bzzQ&riu=http%3a%2f%2fwww.healthyfoodhouse.com%2fwp-content%2fuploads%2f2012%2f10%2fhealthy-drinks.jpg&ehk=WWaIyOgZ3UgnS%2fLWh%2bRowgeG3SHc18ccBN5bqmP9ruk%3d&risl=&pid=ImgRaw&r=0'),
+                                          radius: 20,
+                                        );
+                                      } else {
+                                        return CircleAvatar(
+                                          backgroundImage: NetworkImage(snapshot.data ?? ''),
+                                          radius: 20,
+                                        );
+                                      }
+                                    },
+                                  ),
                                 ],
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(
-                          height: 10,
-                        ),
+                        SizedBox(height: 10),
                         // Căn chỉnh thời tiết ngày tháng
                         Row(
                           children: [
                             Icon(_weatherIcon, size: 30),
                             SizedBox(width: 5),
-                            Text('('+
-                              '$_weather'+ ')',
-                              style: TextStyle(fontSize: 18),
-                            ),
+                            Text('(' + '$_weather' + ')', style: TextStyle(fontSize: 18)),
                             SizedBox(width: 10),
-                            Text(
-                              _currentDate,
-                              style: TextStyle(fontSize: 18),
-                            ),
+                            Text(_currentDate, style: TextStyle(fontSize: 18)),
                           ],
                         ),
                       ],
@@ -340,51 +372,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildOption('assets/images/conference.png', 'Thời khóa biểu',(){
-                            //Hàm click vào sẽ chuyển hướng
+                          _buildOption('assets/images/conference.png', 'Thời khóa biểu', () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context)=> TimetableScreen(),
-                              )
+                              MaterialPageRoute(builder: (context) => TimetableScreen()),
                             );
                           }),
-                          _buildOption('assets/images/party.png', 'Sự kiện',(){
-                            //Hàm click vào sẽ chuyển hướng
+                          _buildOption('assets/images/party.png', 'Sự kiện', () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context)=> EventScreen(),
-                              )
+                              MaterialPageRoute(builder: (context) => EventScreen()),
                             );
                           }),
-                          _buildOption('assets/images/event-list.png', 'Sự kiện đã lưu',(){
-                            //Hàm click vào sẽ chuyển hướng
+                          _buildOption('assets/images/event-list.png', 'Sự kiện đã lưu', () {
                             Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context)=> SaveEventScreen(),
-                                )
+                              context,
+                              MaterialPageRoute(builder: (context) => SaveEventScreen()),
                             );
                           }),
                         ],
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
-            SizedBox(
-              height: 20,
-            ),
-            if(latesEvent!=null)...[
+            SizedBox(height: 20),
+            if (latesEvent != null) ...[
               GestureDetector(
-                onTap: (){
+                onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context)=>DetailEvent(event: latesEvent!,),
-                    ),
+                    MaterialPageRoute(builder: (context) => DetailEvent(event: latesEvent!)),
                   );
                 },
                 child: Padding(
@@ -398,38 +417,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(
-                        height: 3,
-                      ),
+                      SizedBox(height: 3),
                       Text(
-                        DateFormat('d/MM/yyyy, h:mm:a'). format(latesEvent!.createdAt),
+                        DateFormat('d/MM/yyyy, h:mm:a').format(latesEvent!.createdAt),
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
                       SizedBox(height: 5),
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Center(
-                            child: Image.network(
-                              latesEvent!.image,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress){
-                                if(loadingProgress== null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace){
-                                return Icon(Icons.error_outline);
-                              },
-                            )
+                          child: Image.network(
+                            latesEvent!.image,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.error_outline);
+                            },
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ]
-            else ...[
+            ] else ...[
               Center(child: CircularProgressIndicator()),
             ],
             Padding(
@@ -437,15 +451,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Tin sự kiện', style: TextStyle(fontSize: 20,)),
+                  Text('Tin sự kiện', style: TextStyle(fontSize: 20)),
                   TextButton(
                     onPressed: () {
-                      // Chức năng xem tất cả sự kiện
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context)=> EventScreen(),
-                        )
+                        MaterialPageRoute(builder: (context) => EventScreen()),
                       );
                     },
                     child: Text('Xem thêm', style: TextStyle(fontSize: 20, color: Colors.blue)),
@@ -459,8 +470,23 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 }
 
+Future<String> getAvatarUrlFromFirebase() async {
+  final studentId = 'stuid_here'; // ID của sinh viên hiện tại
+  final snapshot = await FirebaseDatabase.instance
+      .ref('students')
+      .child(studentId)
+      .once();
+
+  if (snapshot.snapshot.exists) {
+    final data = snapshot.snapshot.value as Map<dynamic, dynamic>;
+    return data['avatar'] ?? ''; // Trả về URL avatar, nếu không có thì trả về chuỗi rỗng
+  } else {
+    throw Exception('Sinh viên không tồn tại');
+  }
+}
 
 Widget _buildOption(String  imagePath, String label, Function onTap) {
   return GestureDetector(

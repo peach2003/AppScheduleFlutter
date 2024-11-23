@@ -482,20 +482,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       child: Column(
         children: [
           _buildActionButton(
-            icon: Icons.star_outline,
-            title: 'Đánh giá ứng dụng',
-            subtitle: 'Chia sẻ ý kiến của bạn',
-            onTap: () {
-              // TODO: Implement app rating
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildActionButton(
             icon: Icons.support_agent_outlined,
             title: 'Hỗ trợ',
             subtitle: 'Liên hệ với chúng tôi',
             onTap: () {
               // TODO: Implement support
+            },
+          ),
+          const SizedBox(height: 16),
+
+          _buildActionButton(
+            icon: Icons.star_outline,
+            title: 'Đánh giá ứng dụng',
+            subtitle: 'Chia sẻ ý kiến của bạn',
+            onTap: () {
+              // TODO: Implement app rating
             },
           ),
           const SizedBox(height: 16),
