@@ -1,3 +1,4 @@
+import 'package:app_schedule_flutter/Admin/StudentListScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -85,9 +86,16 @@ class _admindashboardState extends State<admindashboard> {
                         title: 'Sinh Viên',
                         svgSrc: "assets/images/icondashboard.svg",
                         press: () {
-                          // Xử lý khi nhấn vào Sinh Viên
+                          // Điều hướng đến StudentListScreen khi nhấn vào "Sinh Viên"
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StudentListScreen(),
+                            ),
+                          );
                         },
                       ),
+
                       DrawerListTile(
                         title: 'Giảng Viên',
                         svgSrc: "assets/images/icondashboard.svg",

@@ -1,20 +1,22 @@
 class Schedule {
-  String scheid;
-  String claid;
-  String subid;
-  String rooid;
-  String daystart;
-  String dayend;
-  String timestart;
-  String timeend;
+  final String claid;
+  final String daystart;
+  final String dayend;
+  final String rooid;
+  final String scheid;
+  final String subid;
+  final String weekday;
+  final String timestart;
+  final String timeend;
 
   Schedule({
-    required this.scheid,
     required this.claid,
-    required this.subid,
-    required this.rooid,
     required this.daystart,
     required this.dayend,
+    required this.rooid,
+    required this.scheid,
+    required this.subid,
+    required this.weekday,
     required this.timestart,
     required this.timeend,
   });
@@ -30,6 +32,8 @@ class Schedule {
       dayend: snapshot['dayend'].toString(),
       timestart: snapshot['timestart'].toString(),
       timeend: snapshot['timeend'].toString(),
+      weekday: snapshot['weekday'].toString(), // Lấy giá trị weekday
     );
   }
+
 }

@@ -237,4 +237,31 @@ class FirebaseService {
     }
     return null;
   }
+
+  Future<List<Map<String, dynamic>>> getSchedulesByClassId(String claid) async {
+    try {
+      // Truy vấn thời khóa biểu theo claid
+      final snapshot = await FirebaseDatabase.instance
+          .ref('schedules') // Đường dẫn tới node 'schedules'
+          .orderByChild('claid') // Sắp xếp theo claid
+          .equalTo(claid) // Lọc theo giá trị cụ thể của claid
+          .get();
+
+      if (snapshot.exists) {
+        List<Map<String, dynamic>> schedules = [];
+        for (var entry in snapshot.children) {
+          schedules.add(Map<String, dynamic>.from(entry.value as Map));
+        }
+        return schedules;
+      } else {
+        print('Không tìm thấy thời khóa biểu cho claid: $claid');
+        return [];
+      }
+    } catch (e) {
+      print('Lỗi khi lấy thời khóa biểu: $e');
+      return [];
+    }
+  }
+
+
 }

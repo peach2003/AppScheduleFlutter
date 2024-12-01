@@ -40,74 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _animationController.forward();
   }
 
-  // Future<void> _fetchUserData() async {
-  //   try {
-  //     SharedPreferences prefs = await SharedPreferences.getInstance();
-  //     String? mssv = prefs.getString('mssv');
-  //     print('MSSV từ SharedPreferences: $mssv');
-  //
-  //     if (mssv != null) {
-  //       DataSnapshot studentSnapshot = await _dbRef.orderByChild('stuid').equalTo(int.parse(mssv)).get();
-  //       print('Student snapshot tồn tại: ${studentSnapshot.exists}');
-  //
-  //       if (studentSnapshot.exists) {
-  //         Map<dynamic, dynamic> studentData = studentSnapshot.value as Map<dynamic, dynamic>;
-  //         print('Dữ liệu sinh viên: $studentData');
-  //
-  //         if (studentData.isNotEmpty) {
-  //           Map<String, dynamic> student = Map<String, dynamic>.from(studentData.values.first);
-  //           print('Thông tin sinh viên đầu tiên: $student');
-  //
-  //           String? claid = student['claid']?.toString();
-  //           print('ClaID: $claid');
-  //
-  //           String className = 'Chưa có lớp';
-  //           String facultyName = 'Chưa có khoa';
-  //
-  //           if (claid != null) {
-  //             // Truy cập trực tiếp đến lớp theo claid mà không dùng orderByChild
-  //             DataSnapshot classSnapshot = await FirebaseDatabase.instance.ref().child('classes').child(claid).get();
-  //             print('Class snapshot tồn tại: ${classSnapshot.exists}');
-  //
-  //             if (classSnapshot.exists) {
-  //               Map<String, dynamic> classData = Map<String, dynamic>.from(classSnapshot.value as Map);
-  //               className = classData['claname'];
-  //               print('Tên lớp: $className');
-  //
-  //               // Truy xuất facid từ classData để lấy tên khoa từ bảng faculty
-  //               String facid = classData['facid'];
-  //               DataSnapshot facultySnapshot = await FirebaseDatabase.instance.ref().child('faculty').orderByChild('facid').equalTo(facid).get();
-  //               print('Faculty snapshot tồn tại: ${facultySnapshot.exists}');
-  //
-  //               if (facultySnapshot.exists) {
-  //                 Map<String, dynamic> facultyData = Map<String, dynamic>.from((facultySnapshot.value as Map).values.first);
-  //                 facultyName = facultyData['facname'];
-  //                 print('Tên khoa: $facultyName');
-  //               } else {
-  //                 print('Không tìm thấy thông tin khoa cho FacID: $facid');
-  //               }
-  //             } else {
-  //               print('Không tìm thấy thông tin lớp cho ClaID: $claid');
-  //             }
-  //           }
-  //
-  //           setState(() {
-  //             userInfo = student;
-  //             _avatarUrl = student['avatar'] ?? '';
-  //             userInfo!['claid'] = className;
-  //             userInfo!['facuname'] = facultyName;
-  //           });
-  //         }
-  //       } else {
-  //         print('Không tìm thấy dữ liệu sinh viên cho MSSV: $mssv');
-  //       }
-  //     } else {
-  //       print('MSSV chưa được lưu trong SharedPreferences');
-  //     }
-  //   } catch (e) {
-  //     print('Lỗi khi lấy dữ liệu sinh viên: $e');
-  //   }
-  // }
   Future<void> _fetchUserData() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -184,9 +116,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       print('Lỗi khi lấy dữ liệu sinh viên: $e');
     }
   }
-
-
-
 
   Future<void> _pickImage() async {
     final ImagePicker _picker = ImagePicker();

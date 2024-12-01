@@ -1,5 +1,6 @@
 import 'package:app_schedule_flutter/Model/Schedule.dart';
 import 'package:app_schedule_flutter/Service/FirebaseService.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -86,18 +87,27 @@ class _TimetableScreenState extends State<TimetableScreen> {
   bool isWeeklyView = true; // Default to weekly view
   String? userClaId;
 
+
+  @override
   @override
   void initState() {
     super.initState();
     _initializeWeekRange();
     _loadClaIdAndTimetable();  // Chỉnh sửa ở đây
   }
+// Lưu claid vào SharedPreferences
+  Future<void> _saveClaId(String claid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('claid', claid);
+    print("ClaID đã được lưu: $claid");
+  }
+
   // Lấy claid từ SharedPreferences và tải thời khóa biểu
   Future<void> _loadClaIdAndTimetable() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     userClaId = prefs.getString('claid'); // Lấy claid đã lưu
 
-    if (userClaId != null) {
+    if (userClaId != null && userClaId!.isNotEmpty) {
       _loadTimetable();  // Gọi loadTimetable khi đã có claid
     } else {
       setState(() {
@@ -107,6 +117,50 @@ class _TimetableScreenState extends State<TimetableScreen> {
     }
   }
 
+  // Hàm tải thời khóa biểu
+  void _loadTimetable() async {
+    if (userClaId == null || userClaId!.isEmpty) {
+      print("ClaID không hợp lệ, không thể tải thời khóa biểu.");
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    // Nếu có userClaId hợp lệ, tiến hành tải thời khóa biểu
+    firebaseService.listenToSchedules(userClaId!).listen((scheduleList) async {
+      for (var schedule in scheduleList) {
+        await _fetchAdditionalDetails(schedule);
+      }
+
+      setState(() {
+        timetable = scheduleList.where((schedule) {
+          DateTime scheduleDate = DateFormat("yyyy-MM-dd").parse(schedule.daystart);
+
+          // Kiểm tra xem chế độ xem là tuần hay ngày
+          if (isWeeklyView) {
+            // Kiểm tra lịch trong khoảng tuần hiện tại
+            return scheduleDate.isAfter(currentWeekStart.subtract(Duration(days: 1))) &&
+                scheduleDate.isBefore(currentWeekEnd.add(Duration(milliseconds: 1)));
+          } else {
+            // Kiểm tra lịch cho ngày được chọn
+            return scheduleDate.isAtSameMomentAs(selectedDate);
+          }
+        }).toList();
+
+        // Sắp xếp thời khóa biểu theo ngày và giờ
+        timetable.sort((a, b) {
+          DateTime dateA = DateFormat("yyyy-MM-dd HH:mm:ss").parse('${a.daystart} ${a.timestart}');
+          DateTime dateB = DateFormat("yyyy-MM-dd HH:mm:ss").parse('${b.daystart} ${b.timestart}');
+          return dateA.compareTo(dateB);
+        });
+
+        isLoading = false;
+      });
+    });
+  }
+
+// Hàm lấy thêm thông tin chi tiết về môn học, lớp học và phòng học
   Future<void> _fetchAdditionalDetails(Schedule schedule) async {
     if (!subjectDetails.containsKey(schedule.subid)) {
       Subject? subject = await firebaseService.getSubjectById(schedule.subid);
@@ -136,7 +190,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
     }
   }
 
-
   // Initialize the current week's range
   void _initializeWeekRange() {
     DateTime now = DateTime.now();
@@ -159,33 +212,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
   }
 
   // Load the timetable and filter for the current week
-  void _loadTimetable() async {
-    firebaseService.listenToSchedules(userClaId!).listen((scheduleList) async {
-      for (var schedule in scheduleList) {
-        await _fetchAdditionalDetails(schedule);
-      }
 
-      setState(() {
-        timetable = scheduleList.where((schedule) {
-          DateTime scheduleDate = DateFormat("yyyy-MM-dd").parse(schedule.daystart);
-          if (isWeeklyView) {
-            return scheduleDate.isAfter(currentWeekStart.subtract(Duration(days: 1))) &&
-                scheduleDate.isBefore(currentWeekEnd.add(Duration(milliseconds: 1)));
-          } else {
-            return scheduleDate.isAtSameMomentAs(selectedDate);
-          }
-        }).toList();
-
-        // Sort the timetable by day and time
-        timetable.sort((a, b) {
-          DateTime dateA = DateFormat("yyyy-MM-dd HH:mm:ss").parse('${a.daystart} ${a.timestart}');
-          DateTime dateB = DateFormat("yyyy-MM-dd HH:mm:ss").parse('${b.daystart} ${b.timestart}');
-          return dateA.compareTo(dateB);
-        });
-        isLoading = false;
-      });
-    });
-  }
   void _toggleView(bool weekly) {
     setState(() {
       isWeeklyView = weekly;
@@ -199,13 +226,16 @@ class _TimetableScreenState extends State<TimetableScreen> {
   @override
   Widget build(BuildContext context) {
     List<DateTime> daysInMonth = _generateDaysInMonth(currentMonth);
+
     return Scaffold(
       appBar: AppBar(
         leading: widget.isInDashboard
             ? null
             : IconButton(
-          icon:isWeeklyView? Icon(Icons.arrow_back_ios_new, color: Colors.white,):Icon(Icons.arrow_back_ios_new, color: Colors.black,),
-          onPressed: (){
+          icon: isWeeklyView
+              ? Icon(Icons.arrow_back_ios_new, color: Colors.white)
+              : Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          onPressed: () {
             Navigator.pop(context);
           },
         ),
@@ -214,10 +244,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 25,
-            color:isWeeklyView? Colors.white:Colors.black ,
+            color: isWeeklyView ? Colors.white : Colors.black,
           ),
         ),
-        backgroundColor: isWeeklyView?Colors.lightBlueAccent: Colors.white,
+        backgroundColor: isWeeklyView ? Colors.lightBlueAccent : Colors.white,
         elevation: 0,
         actions: [
           Row(
@@ -230,9 +260,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
-                    side: BorderSide(
-                      color:isWeeklyView ? Colors.white : Colors.green,
-                    )
+                    side: BorderSide(color: isWeeklyView ? Colors.white : Colors.green),
                   ),
                 ),
                 child: Text(
@@ -251,9 +279,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.zero,
-                      side: BorderSide(
-                        color:isWeeklyView ? Colors.green : Colors.black54,
-                      )
+                    side: BorderSide(color: isWeeklyView ? Colors.green : Colors.black54),
                   ),
                 ),
                 child: Text(
@@ -269,8 +295,9 @@ class _TimetableScreenState extends State<TimetableScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: isWeeklyView? Size.fromHeight(40): Size.fromHeight(100),
-          child: isWeeklyView? Padding(
+          preferredSize: isWeeklyView ? Size.fromHeight(40) : Size.fromHeight(100),
+          child: isWeeklyView
+              ? Padding(
             padding: const EdgeInsets.symmetric(vertical: 2.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -293,8 +320,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 ),
               ],
             ),
-          ):
-          Column(
+          )
+              : Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -332,7 +359,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              DateFormat('E', 'vi').format(date), // Hiển thị thứ (ngày trong tuần)
+                              DateFormat('E', 'vi').format(date),
                               style: TextStyle(
                                 color: isSelected ? Colors.white : Colors.black,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -341,7 +368,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             ),
                             SizedBox(height: 5),
                             Text(
-                              '${date.day}', // Hiển thị ngày
+                              '${date.day}',
                               style: TextStyle(
                                 color: isSelected ? Colors.white : Colors.black,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -357,7 +384,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
               ),
             ],
           ),
-
         ),
       ),
       backgroundColor: Colors.white,
@@ -377,11 +403,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
               SizedBox(height: 25),
               const Text(
                 'Đang tải thời khóa biểu...',
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Colors.black),
               ),
             ],
           ),
@@ -403,22 +425,17 @@ class _TimetableScreenState extends State<TimetableScreen> {
               SizedBox(height: 25),
               const Text(
                 'Không có lịch học trong thời khóa biểu',
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Colors.black),
               ),
             ],
           ),
         ),
       )
-
           : Padding(
-          padding: const EdgeInsets.only(top: 25.0), // Khoảng cách 16 pixel từ phía trên
-            child: ListView.builder(
-                    itemCount: timetable.length,
-                    itemBuilder: (context, index) {
+        padding: const EdgeInsets.only(top: 25.0),
+        child: ListView.builder(
+          itemCount: timetable.length,
+          itemBuilder: (context, index) {
             final schedule = timetable[index];
             final subject = subjectDetails[schedule.subid];
             final classInfo = classDetails[schedule.claid];
@@ -442,8 +459,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   ),
                 );
               },
-              title:Container(
-
+              title: Container(
                 color: Colors.white,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,17 +468,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       '$formattedDate ',
                       style: TextStyle(color: Colors.red, fontSize: 18),
                     ),
-                    SizedBox(
-                      height: 3,
-                    ),
+                    SizedBox(height: 3),
                     Divider(
                       height: 0.5,
                       color: Colors.green,
-                      //thickness: ,
                     ),
-                    SizedBox(
-                      height: 10,
-                    ),
+                    SizedBox(height: 10),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -471,76 +482,56 @@ class _TimetableScreenState extends State<TimetableScreen> {
                           children: [
                             Text(
                               'Tiết',
-                              style: TextStyle(
-                                fontSize: 20
-                              ),
+                              style: TextStyle(fontSize: 20),
                             ),
                             Text(
                               '$period',
-                              style: TextStyle(
-                                fontSize: 18,
-                              ),
+                              style: TextStyle(fontSize: 18),
                             )
                           ],
                         ),
-                        SizedBox(
-                          width: 20,
-                        ),
+                        SizedBox(width: 20),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                         '${subject?.subname ?? 'Unknown Subject'}',
-                              style: TextStyle(
-                                fontSize: 20,
-                                //fontWeight: FontWeight.bold,
-                              ),
+                              '${subject?.subname ?? 'Unknown Subject'}',
+                              style: TextStyle(fontSize: 20),
                             ),
-                            SizedBox(height: 5,),
+                            SizedBox(height: 5),
                             Row(
                               children: [
-                                Icon(Icons.location_on_outlined, color: Colors.green,size: 25,),
+                                Icon(Icons.location_on_outlined, color: Colors.green, size: 25),
                                 Text(
-                                  'Phòng: ${room?.rooname }',
-                                  style: TextStyle(
-
-                                      fontSize: 18
-                                  ),
-                                )
-                              ],
-                            ),
-                            SizedBox(
-                              height: 5,
-                            ),
-                            Row(
-                              children: [
-                                Icon(Icons.class_outlined, color: Colors.green,size: 25,),
-                                Text(
-                                  'Lớp: ${classInfo?.claname }',
-                                  style: TextStyle(
-                                      fontSize: 18
-                                  ),
+                                  'Phòng: ${room?.rooname}',
+                                  style: TextStyle(fontSize: 18),
                                 ),
                               ],
-                            )
+                            ),
+                            SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Icon(Icons.class_outlined, color: Colors.green, size: 25),
+                                Text(
+                                  'Lớp: ${classInfo?.claname}',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                              ],
+                            ),
                           ],
-                        )
+                        ),
                       ],
                     ),
-                    SizedBox(height: 5,),
-                    //_buildDashedDivider(), // Thêm đường nét đứt bên dưới mỗi mục
                   ],
                 ),
-              )
-              /*Text(
-                '$formattedDate - $period (${schedule.timestart} đến ${schedule.timeend})',
-                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              subtitle: Text('Lớp: ${schedule.claid} - Phòng: ${schedule.rooid}'),*/
             );
-                    },
-                  ),
-          ),
+          },
+        ),
+      ),
     );
   }
+
+
+
 }
