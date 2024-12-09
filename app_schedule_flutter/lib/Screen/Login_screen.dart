@@ -38,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
     _loadSavedCredentials();
     _animationController.forward();
+    _checkLoginStatus();
   }
 
   @override
@@ -46,6 +47,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _mssvController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (isLoggedIn) {
+      String rule = prefs.getString('rule') ?? 'user';
+
+      if (rule == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => admindashboard()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Dashboad()),
+        );
+      }
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    }
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -95,7 +122,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
 
-
   Future<void> _loginWithMSSV(String mssv, String password) async {
     if (!_isLoading) {
       setState(() => _isLoading = true);
@@ -116,50 +142,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         if (studentSnapshot.exists) {
           print("Dữ liệu từ students: ${studentSnapshot.value}");
 
-          if (studentSnapshot.value is Map) {
-            // Nếu dữ liệu là Map, chuyển sang kiểu Map để xử lý
-            Map<dynamic, dynamic> studentMap = studentSnapshot.value as Map<dynamic, dynamic>;
-
-            // Tìm kiếm sinh viên theo stuid
-            var studentData = studentMap.values.firstWhere(
-                  (student) => student['stuid'] == parsedMssv,
-              orElse: () => null,
-            );
-
-            if (studentData != null && studentData['password'] == password) {
-              // Lưu thông tin đăng nhập
-              await _rememberPassword();
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              await prefs.setString('userId', mssv);
-              await prefs.setBool('isLoggedIn', true);
-
-              Navigator.of(context).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => Dashboad()), // Trang dashboard sinh viên
-              );
-              return;
-            } else {
-              Navigator.of(context).pop();
-              _showErrorSnackBar('Mật khẩu không đúng');
-              return;
-            }
-          } else if (studentSnapshot.value is List) {
-            // Nếu dữ liệu là List, xử lý theo cách của List
+          if (studentSnapshot.value is List) {
             List<dynamic> studentList = studentSnapshot.value as List<dynamic>;
 
-            // Tìm kiếm sinh viên theo stuid
             var studentData = studentList.firstWhere(
                   (student) => student['stuid'] == parsedMssv,
               orElse: () => null,
             );
 
             if (studentData != null && studentData['password'] == password) {
-              // Lưu thông tin đăng nhập
               await _rememberPassword();
               SharedPreferences prefs = await SharedPreferences.getInstance();
               await prefs.setString('userId', mssv);
               await prefs.setBool('isLoggedIn', true);
+              await prefs.setString('rule', 'user'); // Lưu role là user
+
+              String claid = studentData['claid'];
+              await prefs.setString('claid', claid); // Lưu claid vào SharedPreferences
+
+              // Xác nhận dữ liệu đã được lưu
+              String? savedClaid = prefs.getString('claid');
+              print('Saved claid: $savedClaid'); // Kiểm tra giá trị claid đã lưu
 
               Navigator.of(context).pop();
               Navigator.pushReplacement(
@@ -179,63 +182,37 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         if (adminSnapshot.exists) {
           print("Dữ liệu từ admins: ${adminSnapshot.value}");
 
-          if (adminSnapshot.value is Map) {
-            // Nếu dữ liệu là Map, chuyển sang kiểu Map để xử lý
-            Map<dynamic, dynamic> adminMap = adminSnapshot.value as Map<dynamic, dynamic>;
-
-            // Tìm kiếm admin theo adminid
-            var adminData = adminMap.values.firstWhere(
-                  (admin) => admin['adminid'] == parsedMssv,
-              orElse: () => null,
-            );
-
-            if (adminData != null && adminData['password'] == password) {
-              // Lưu thông tin đăng nhập
-              await _rememberPassword();
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              await prefs.setString('userId', mssv);
-              await prefs.setBool('isLoggedIn', true);
-
-              Navigator.of(context).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => admindashboard()), // Trang dashboard admin
-              );
-            } else {
-              Navigator.of(context).pop();
-              _showErrorSnackBar('Mật khẩu không đúng');
-            }
-          } else if (adminSnapshot.value is List) {
-            // Nếu dữ liệu là List, xử lý theo cách của List
+          if (adminSnapshot.value is List) {
             List<dynamic> adminList = adminSnapshot.value as List<dynamic>;
 
-            // Tìm kiếm admin theo adminid
             var adminData = adminList.firstWhere(
                   (admin) => admin['adminid'] == parsedMssv,
               orElse: () => null,
             );
 
             if (adminData != null && adminData['password'] == password) {
-              // Lưu thông tin đăng nhập
               await _rememberPassword();
               SharedPreferences prefs = await SharedPreferences.getInstance();
               await prefs.setString('userId', mssv);
               await prefs.setBool('isLoggedIn', true);
+              await prefs.setString('rule', 'admin'); // Lưu role là admin
 
               Navigator.of(context).pop();
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => admindashboard()), // Trang dashboard admin
               );
+              return;
             } else {
               Navigator.of(context).pop();
               _showErrorSnackBar('Mật khẩu không đúng');
+              return;
             }
           }
-        } else {
-          Navigator.of(context).pop();
-          _showErrorSnackBar('Tài khoản không tồn tại');
         }
+
+        Navigator.of(context).pop();
+        _showErrorSnackBar('Tài khoản không tồn tại');
       } catch (e) {
         Navigator.of(context).pop();
         _showErrorSnackBar('Đã có lỗi xảy ra. Vui lòng thử lại sau.\nLỗi: $e');
@@ -244,6 +221,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       }
     }
   }
+
+
 
 
 
