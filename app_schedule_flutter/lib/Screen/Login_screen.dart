@@ -95,8 +95,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-
-
   Future<void> _loginWithMSSV(String mssv, String password) async {
     if (!_isLoading) {
       setState(() => _isLoading = true);
@@ -105,59 +103,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       try {
         final int parsedMssv = int.parse(mssv);
 
-        // Lấy dữ liệu từ bảng students
-        DatabaseReference studentRef = FirebaseDatabase.instance.ref().child('students');
-        DataSnapshot studentSnapshot = await studentRef.get();
-
-        // Lấy dữ liệu từ bảng admins
+        // Lấy dữ liệu từ bảng admins trước (thay đổi thứ tự)
         DatabaseReference adminRef = FirebaseDatabase.instance.ref().child('admins');
         DataSnapshot adminSnapshot = await adminRef.get();
-
-        // Kiểm tra nếu tài khoản là sinh viên
-        if (studentSnapshot.exists && studentSnapshot.value is List) {
-          List<dynamic> studentList = studentSnapshot.value as List<dynamic>;
-
-          // Tìm kiếm sinh viên theo stuid
-          var studentData = studentList.firstWhere(
-                (student) =>
-            student != null && // Kiểm tra dữ liệu không null
-                student['stuid'] == parsedMssv,
-            orElse: () => null,
-          );
-
-          if (studentData != null && studentData['password'] == password) {
-            // Lưu thông tin đăng nhập
-            print("StudentData: $studentData");
-            String claid = studentData['claid'];
-            print("Claid được lấy: $claid");
-            //
-            await _rememberPassword();
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setString('userId', mssv);
-            await prefs.setBool('isLoggedIn', true);
-
-            // Lấy và lưu claid
-            // String claid = studentData['claid'];
-            // await prefs.setString('claid', claid);
-            bool isSaved = await prefs.setString('claid', claid);
-            if (isSaved) {
-              print("Claid đã được lưu thành công: $claid");
-            } else {
-              print("Lưu Claid thất bại.");
-            }
-
-            Navigator.of(context).pop();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => Dashboad()), // Trang dashboard sinh viên
-            );
-            return;
-          } else {
-            Navigator.of(context).pop();
-            _showErrorSnackBar('Mật khẩu không đúng');
-            return;
-          }
-        }
 
         // Kiểm tra nếu tài khoản là admin
         if (adminSnapshot.exists && adminSnapshot.value is List) {
@@ -184,9 +132,48 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               MaterialPageRoute(builder: (context) => admindashboard()), // Trang dashboard admin
             );
             return;
-          } else {
+          }
+        }
+
+        // Nếu không phải admin, kiểm tra tài khoản sinh viên
+        DatabaseReference studentRef = FirebaseDatabase.instance.ref().child('students');
+        DataSnapshot studentSnapshot = await studentRef.get();
+
+        // Kiểm tra nếu tài khoản là sinh viên
+        if (studentSnapshot.exists && studentSnapshot.value is List) {
+          List<dynamic> studentList = studentSnapshot.value as List<dynamic>;
+
+          // Tìm kiếm sinh viên theo stuid
+          var studentData = studentList.firstWhere(
+                (student) =>
+            student != null && // Kiểm tra dữ liệu không null
+                student['stuid'] == parsedMssv,
+            orElse: () => null,
+          );
+
+          if (studentData != null && studentData['password'] == password) {
+            // Lưu thông tin đăng nhập
+            print("StudentData: $studentData");
+            String claid = studentData['claid'];
+            print("Claid được lấy: $claid");
+
+            await _rememberPassword();
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('userId', mssv);
+            await prefs.setBool('isLoggedIn', true);
+
+            bool isSaved = await prefs.setString('claid', claid);
+            if (isSaved) {
+              print("Claid đã được lưu thành công: $claid");
+            } else {
+              print("Lưu Claid thất bại.");
+            }
+
             Navigator.of(context).pop();
-            _showErrorSnackBar('Mật khẩu không đúng');
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Dashboad()), // Trang dashboard sinh viên
+            );
             return;
           }
         }
@@ -202,6 +189,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       }
     }
   }
+
+
 
 
 
