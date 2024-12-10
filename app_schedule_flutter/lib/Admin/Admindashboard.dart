@@ -1,3 +1,5 @@
+import 'package:app_schedule_flutter/Admin/EventListScreen.dart';
+import 'package:app_schedule_flutter/Admin/ListSchedule.dart';
 import 'package:app_schedule_flutter/Admin/StudentListScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -95,19 +97,16 @@ class _admindashboardState extends State<admindashboard> {
                           );
                         },
                       ),
-
                       DrawerListTile(
-                        title: 'Giảng Viên',
+                        title: 'Thời Khóa Biểu',
                         svgSrc: "assets/images/icondashboard.svg",
                         press: () {
-                          // Xử lý khi nhấn vào Giảng Viên
-                        },
-                      ),
-                      DrawerListTile(
-                        title: 'Lớp',
-                        svgSrc: "assets/images/icondashboard.svg",
-                        press: () {
-                          // Xử lý khi nhấn vào Lớp
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ListSchedule(),
+                            ),
+                          );
                         },
                       ),
                       DrawerListTile(
@@ -115,6 +114,12 @@ class _admindashboardState extends State<admindashboard> {
                         svgSrc: "assets/images/icondashboard.svg",
                         press: () {
                           // Xử lý khi nhấn vào Sự Kiện
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EventListScreen(),
+                            ),
+                          );
                         },
                       ),
                       Divider(),

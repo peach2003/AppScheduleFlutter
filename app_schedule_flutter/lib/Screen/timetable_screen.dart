@@ -87,22 +87,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
   bool isWeeklyView = true; // Default to weekly view
   String? userClaId;
 
-
-  @override
   @override
   void initState() {
     super.initState();
     _initializeWeekRange();
     _loadClaIdAndTimetable();  // Chỉnh sửa ở đây
   }
-// Lưu claid vào SharedPreferences
-  Future<void> _saveClaId(String claid) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('claid', claid);
-    print("ClaID đã được lưu: $claid");
-  }
-
-  // Lấy claid từ SharedPreferences và tải thời khóa biểu
   Future<void> _loadClaIdAndTimetable() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     userClaId = prefs.getString('claid'); // Lấy claid đã lưu
@@ -115,6 +105,43 @@ class _TimetableScreenState extends State<TimetableScreen> {
       });
       print("ClaID không tồn tại trong SharedPreferences");
     }
+  }
+
+  Future<void> saveClaIdToSharedPreferences(String claid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('claid', claid);
+    print('ClaID saved: $claid');
+  }
+// Lưu claid vào SharedPreferences
+//   Future<void> _saveClaId(String claid) async {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//     await prefs.setString('claid', claid);
+//     print("ClaID đã được lưu: $claid");
+//   }
+
+  // Lấy claid từ SharedPreferences và tải thời khóa biểu
+  // Future<void> _loadClaIdAndTimetable() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   userClaId = prefs.getString('claid'); // Lấy claid đã lưu
+  //
+  //   if (userClaId != null && userClaId!.isNotEmpty) {
+  //     _loadTimetable();  // Gọi loadTimetable khi đã có claid
+  //   } else {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //     print("ClaID không tồn tại trong SharedPreferences");
+  //   }
+  // }
+  Future<String?> getClaIdFromSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? claid = prefs.getString('claid');
+    if (claid == null || claid.isEmpty) {
+      print("ClaID không tồn tại trong SharedPreferences.");
+      return null;
+    }
+    print("ClaID retrieved: $claid");
+    return claid;
   }
 
   // Hàm tải thời khóa biểu
@@ -208,6 +235,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
         currentWeekEnd = currentWeekEnd.subtract(Duration(days: 7));
       }
       _loadTimetable();
+
     });
   }
 
@@ -345,6 +373,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                         setState(() {
                           selectedDate = date;
                           _loadTimetable();
+                          // loadTimetable();
                         });
                       },
                       child: Container(
