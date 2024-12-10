@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _loadSavedCredentials();
-    checkClaid();
+    // checkClaid();
     _animationController.forward();
   }
 
@@ -191,21 +191,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
 
-
-
-
-  Future<void> checkClaid() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? claid = prefs.getString('claid'); // Lấy giá trị claid từ SharedPreferences
-
-    if (claid != null) {
-      print("Claid đã được lưu: $claid");
-      _showSuccessSnackBar("Claid đã được lưu: $claid");
-    } else {
-      print("Claid chưa được lưu.");
-      _showErrorSnackBar("Claid chưa được lưu.");
-    }
-  }
+  // Future<void> checkClaid() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   String? claid = prefs.getString('claid'); // Lấy giá trị claid từ SharedPreferences
+  //
+  //   if (claid != null) {
+  //     print("Claid đã được lưu: $claid");
+  //     _showSuccessSnackBar("Claid đã được lưu: $claid");
+  //   } else {
+  //     print("Claid chưa được lưu.");
+  //     _showErrorSnackBar("Claid chưa được lưu.");
+  //   }
+  // }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

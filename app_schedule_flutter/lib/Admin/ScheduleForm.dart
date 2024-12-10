@@ -86,8 +86,6 @@ class _ScheduleFormState extends State<ScheduleForm> {
     }
   }
 
-
-
   Future<void> _loadScheduleData() async {
     final snapshot = await _scheduleRef.child(widget.scheduleId!).get();
     if (snapshot.exists) {
@@ -135,6 +133,7 @@ class _ScheduleFormState extends State<ScheduleForm> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.scheduleId == null ? "Add Schedule" : "Edit Schedule"),
+        backgroundColor: Colors.blue, // Blue color for the AppBar
       ),
       body: Form(
         key: _formKey,
@@ -148,56 +147,115 @@ class _ScheduleFormState extends State<ScheduleForm> {
                   return DropdownMenuItem(value: entry.key, child: Text(entry.value));
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedClassId = value),
-                decoration: InputDecoration(labelText: "Class"),
+                decoration: InputDecoration(
+                  labelText: "Class",
+                  labelStyle: TextStyle(color: Colors.blue), // Blue label color
+                  filled: true,
+                  fillColor: Colors.blue.shade50, // Light blue background for dropdown
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value == null ? "Please select a class" : null,
               ),
+              SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _selectedRoomId,
                 items: _rooms.entries.map((entry) {
                   return DropdownMenuItem(value: entry.key, child: Text(entry.value));
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedRoomId = value),
-                decoration: InputDecoration(labelText: "Room"),
+                decoration: InputDecoration(
+                  labelText: "Room",
+                  labelStyle: TextStyle(color: Colors.blue),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value == null ? "Please select a room" : null,
               ),
+              SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _selectedSubjectId,
                 items: _subjects.entries.map((entry) {
                   return DropdownMenuItem(value: entry.key, child: Text(entry.value));
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedSubjectId = value),
-                decoration: InputDecoration(labelText: "Subject"),
+                decoration: InputDecoration(
+                  labelText: "Subject",
+                  labelStyle: TextStyle(color: Colors.blue),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value == null ? "Please select a subject" : null,
               ),
+              SizedBox(height: 12),
               TextFormField(
                 controller: _daystartController,
-                decoration: InputDecoration(labelText: "Start Date"),
+                decoration: InputDecoration(
+                  labelText: "Start Date",
+                  labelStyle: TextStyle(color: Colors.blue),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value!.isEmpty ? "Please enter start date" : null,
               ),
+              SizedBox(height: 12),
               TextFormField(
                 controller: _dayendController,
-                decoration: InputDecoration(labelText: "End Date"),
+                decoration: InputDecoration(
+                  labelText: "End Date",
+                  labelStyle: TextStyle(color: Colors.blue),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value!.isEmpty ? "Please enter end date" : null,
               ),
+              SizedBox(height: 12),
               TextFormField(
                 controller: _timestartController,
-                decoration: InputDecoration(labelText: "Start Time"),
+                decoration: InputDecoration(
+                  labelText: "Start Time",
+                  labelStyle: TextStyle(color: Colors.blue),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value!.isEmpty ? "Please enter start time" : null,
               ),
+              SizedBox(height: 12),
               TextFormField(
                 controller: _timeendController,
-                decoration: InputDecoration(labelText: "End Time"),
+                decoration: InputDecoration(
+                  labelText: "End Time",
+                  labelStyle: TextStyle(color: Colors.blue),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value!.isEmpty ? "Please enter end time" : null,
               ),
+              SizedBox(height: 12),
               TextFormField(
                 controller: _weekdayController,
-                decoration: InputDecoration(labelText: "Weekday (2=Monday, ... 7=Sunday)"),
+                decoration: InputDecoration(
+                  labelText: "Weekday (2=Monday, ... 7=Sunday)",
+                  labelStyle: TextStyle(color: Colors.blue),
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value!.isEmpty ? "Please enter weekday" : null,
               ),
               SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _saveSchedule,
-                child: Text(widget.scheduleId == null ? "Add Schedule" : "Update Schedule"),
+            ElevatedButton(
+              onPressed: _saveSchedule,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // Use backgroundColor instead of primary
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            child: Text(widget.scheduleId == null ? "Add Schedule" : "Update Schedule"),
               ),
             ],
           ),

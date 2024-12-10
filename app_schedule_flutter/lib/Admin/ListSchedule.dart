@@ -33,7 +33,12 @@ class _ListScheduleState extends State<ListSchedule> {
   void _deleteSchedule(String id) async {
     await _dbRef.child(id).remove();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Deleted schedule $id")),
+      SnackBar(
+        content: Text("Deleted schedule $id"),
+        backgroundColor: Colors.blue, // Blue background for SnackBar
+        behavior: SnackBarBehavior.floating, // Floating behavior
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 
@@ -42,34 +47,53 @@ class _ListScheduleState extends State<ListSchedule> {
     return Scaffold(
       appBar: AppBar(
         title: Text("List Schedule"),
+        backgroundColor: Colors.blue, // Blue AppBar
+        elevation: 4.0,
       ),
       body: ListView.builder(
         itemCount: _schedules.length,
         itemBuilder: (context, index) {
           final schedule = _schedules[index];
-          return ListTile(
-            title: Text("Schedule ${schedule['scheid']}"),
-            subtitle: Text("Class ID: ${schedule['claid']}"),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ScheduleForm(scheduleId: schedule['id']),
-                      ),
-                    );
-                  },
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              contentPadding: EdgeInsets.all(15),
+              title: Text(
+                "Schedule ${schedule['scheid']}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
-                IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () => _deleteSchedule(schedule['id']),
-                ),
-              ],
+              ),
+              subtitle: Text(
+                "Class ID: ${schedule['claid']}",
+                style: TextStyle(fontSize: 14),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ScheduleForm(scheduleId: schedule['id']),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteSchedule(schedule['id']),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -82,6 +106,7 @@ class _ListScheduleState extends State<ListSchedule> {
           );
         },
         child: Icon(Icons.add),
+        backgroundColor: Colors.blue, // Blue FAB
       ),
     );
   }

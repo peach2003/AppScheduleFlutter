@@ -170,14 +170,48 @@ class FirebaseService {
     try {
       final snapshot = await _subjectRef.child(subId).get();
       if (snapshot.exists) {
-        return Subject.fromJson(Map<String, dynamic>.from(snapshot.value as Map<dynamic, dynamic>));
+        return Subject.fromJson(Map<String, dynamic>.from({
+          ...snapshot.value as Map,
+          'subid': (snapshot.value as Map)['subid'].toString()
+        }));
       }
     } catch (e) {
       print("Lỗi khi lấy môn học: $e");
     }
     return null;
   }
-
+  // Future<Subject?> getSubjectById(String subId) async {
+  //   try {
+  //     final snapshot = await _subjectRef.child(subId).get();
+  //     if (snapshot.exists) {
+  //       // In ra toàn bộ giá trị để kiểm tra
+  //       print('Raw snapshot value: ${snapshot.value}');
+  //       print('Snapshot value type: ${snapshot.value.runtimeType}');
+  //
+  //       // Thử chuyển đổi một cách an toàn
+  //       if (snapshot.value is Map) {
+  //         try {
+  //           // Chuyển đổi Map động sang Map<String, dynamic>
+  //           final Map<String, dynamic> data =
+  //           Map<String, dynamic>.from(snapshot.value as Map);
+  //
+  //           return Subject.fromJson(data);
+  //         } catch (convertError) {
+  //           print('Lỗi chuyển đổi dữ liệu: $convertError');
+  //           return null;
+  //         }
+  //       } else {
+  //         print('Dữ liệu không phải là Map');
+  //         return null;
+  //       }
+  //     } else {
+  //       print('Không tìm thấy dữ liệu cho subId: $subId');
+  //     }
+  //   } catch (e) {
+  //     print("Lỗi khi lấy môn học: $e");
+  //   }
+  //   return null;
+  // }
   // Lấy thông tin phòng học theo ID
   Future<Room?> getRoomById(String roomId) async {
     try {

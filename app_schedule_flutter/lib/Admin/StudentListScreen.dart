@@ -40,8 +40,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
     }
   }
 
-
-
   // Show student form when adding or editing a student
   void _showStudentForm({Map<String, dynamic>? student}) {
     showModalBottomSheet(
@@ -89,7 +87,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 
-
   // Save or update student
   void _saveStudent(int? stuid, Map<String, dynamic> studentData) async {
     final studentDataRef = FirebaseDatabase.instance.ref('students');
@@ -121,77 +118,113 @@ class _StudentListScreenState extends State<StudentListScreen> {
     _fetchData();
   }
 
-  // Delete student
+  // Delete student with confirmation
   void _deleteStudent(int stuid) async {
-    final studentDataRef = FirebaseDatabase.instance.ref('students');
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Deletion'),
+          content: Text('Are you sure you want to delete this student?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+            ),
+            TextButton(
+              child: Text('Delete'),
+              onPressed: () async {
+                final studentDataRef = FirebaseDatabase.instance.ref('students');
+                final snapshot = await studentDataRef.get();
 
-    // Fetch the students data from Firebase
-    final snapshot = await studentDataRef.get();
+                if (snapshot.exists) {
+                  List<dynamic> students = [];
 
-    if (snapshot.exists) {
-      List<dynamic> students = [];
+                  if (snapshot.value is List) {
+                    students = (snapshot.value as List).whereType<Map<String, dynamic>>().toList();
+                  } else if (snapshot.value is Map) {
+                    students = (snapshot.value as Map).values
+                        .map((item) => Map<String, dynamic>.from(item))
+                        .toList();
+                  }
 
-      if (snapshot.value is List) {
-        // Convert the List<dynamic> to List<Map<String, dynamic>>
-        students = (snapshot.value as List).whereType<Map<String, dynamic>>().toList();
-      } else if (snapshot.value is Map) {
-        // Handle the case where data is a Map, not a List
-        students = (snapshot.value as Map).values
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
-      }
+                  // Find the index of the student to delete based on stuid
+                  final studentToDeleteIndex = students.indexWhere((student) => student['stuid'] == stuid);
 
-      // Find the index of the student to delete based on stuid
-      final studentToDeleteIndex = students.indexWhere((student) => student['stuid'] == stuid);
+                  if (studentToDeleteIndex != -1) {
+                    // If student is found, remove it from Firebase
+                    students.removeAt(studentToDeleteIndex);
 
-      if (studentToDeleteIndex != -1) {
-        // If student is found, remove it from Firebase
-        students.removeAt(studentToDeleteIndex);
+                    // Update the student list in Firebase by setting the updated list
+                    await studentDataRef.set(students);
 
-        // Update the student list in Firebase by setting the updated list
-        await studentDataRef.set(students);
+                    // Remove the student from the local list
+                    setState(() {
+                      studentList.removeWhere((student) => student['stuid'] == stuid);
+                    });
 
-        // Remove the student from the local list
-        setState(() {
-          studentList.removeWhere((student) => student['stuid'] == stuid);
-        });
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student deleted successfully')));
-      } else {
-        // Show an error if the student wasn't found
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student not found')));
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No data found')));
-    }
+                    // Close the dialog and show success message
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student deleted successfully')));
+                  } else {
+                    // Show an error if the student wasn't found
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student not found')));
+                  }
+                } else {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No data found')));
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Student List")),
+      appBar: AppBar(
+        title: Text("Student List"),
+        backgroundColor: Colors.blue, // Blue app bar
+      ),
       body: ListView.builder(
         itemCount: studentList.length,
         itemBuilder: (context, index) {
           final student = studentList[index];
-          return ListTile(
-            title: Text(student['stuname'] ?? 'No Name'), // student['stuname']
-            subtitle: Text(student['gmail'] ?? 'No Email'), // student['gmail']
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () => _showStudentForm(student: student), // Show form to edit
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () => _deleteStudent(student['stuid']), // Delete student
-                ),
-              ],
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: ListTile(
+              contentPadding: EdgeInsets.all(15),
+              title: Text(
+                student['stuname'] ?? 'No Name',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              subtitle: Text(
+                student['gmail'] ?? 'No Email',
+                style: TextStyle(fontSize: 14),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => _showStudentForm(student: student), // Show form to edit
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteStudent(student['stuid']), // Delete student with confirmation
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -199,8 +232,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showStudentForm(), // Show form to add a new student
         child: Icon(Icons.add),
+        backgroundColor: Colors.blue, // Blue FAB
       ),
     );
   }
-
 }

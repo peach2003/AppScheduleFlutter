@@ -112,27 +112,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
     await prefs.setString('claid', claid);
     print('ClaID saved: $claid');
   }
-// Lưu claid vào SharedPreferences
-//   Future<void> _saveClaId(String claid) async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     await prefs.setString('claid', claid);
-//     print("ClaID đã được lưu: $claid");
-//   }
-
-  // Lấy claid từ SharedPreferences và tải thời khóa biểu
-  // Future<void> _loadClaIdAndTimetable() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   userClaId = prefs.getString('claid'); // Lấy claid đã lưu
-  //
-  //   if (userClaId != null && userClaId!.isNotEmpty) {
-  //     _loadTimetable();  // Gọi loadTimetable khi đã có claid
-  //   } else {
-  //     setState(() {
-  //       isLoading = false;
-  //     });
-  //     print("ClaID không tồn tại trong SharedPreferences");
-  //   }
-  // }
   Future<String?> getClaIdFromSharedPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? claid = prefs.getString('claid');
@@ -159,10 +138,13 @@ class _TimetableScreenState extends State<TimetableScreen> {
       for (var schedule in scheduleList) {
         await _fetchAdditionalDetails(schedule);
       }
-
       setState(() {
         timetable = scheduleList.where((schedule) {
           DateTime scheduleDate = DateFormat("yyyy-MM-dd").parse(schedule.daystart);
+          print('Dữ liệu lịch đã tải về:');
+          scheduleList.forEach((schedule) {
+            print('Lịch: ${schedule.daystart}, ${schedule.subid}');
+          });
 
           // Kiểm tra xem chế độ xem là tuần hay ngày
           if (isWeeklyView) {

@@ -216,7 +216,9 @@ class _StudentFormState extends State<StudentForm> {
             TextFormField(
               controller: _stuidController,
               decoration: InputDecoration(labelText: "Mã sinh viên"),
+
               keyboardType: TextInputType.number,
+
               validator: (value) =>
               value!.isEmpty ? "Mã sinh viên không được để trống" : null,
             ),

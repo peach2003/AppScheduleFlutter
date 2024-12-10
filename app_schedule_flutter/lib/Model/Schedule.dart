@@ -24,16 +24,17 @@ class Schedule {
   // Phương thức chuyển đổi từ Firebase snapshot
   factory Schedule.fromSnapshot(Map<dynamic, dynamic> snapshot) {
     return Schedule(
-      scheid: snapshot['scheid'].toString(),
-      claid: snapshot['claid'].toString(),
-      subid: snapshot['subid'].toString(),
-      rooid: snapshot['rooid'].toString(),
-      daystart: snapshot['daystart'].toString(),
-      dayend: snapshot['dayend'].toString(),
-      timestart: snapshot['timestart'].toString(),
-      timeend: snapshot['timeend'].toString(),
-      weekday: snapshot['weekday'].toString(), // Lấy giá trị weekday
+      scheid: snapshot['scheid']?.toString() ?? '',  // Đảm bảo rằng dữ liệu tồn tại và chuyển thành chuỗi
+      claid: snapshot['claid']?.toString() ?? '',
+      subid: snapshot['subid']?.toString() ?? '',
+      rooid: snapshot['rooid']?.toString() ?? '',
+      daystart: snapshot['daystart']?.toString() ?? '',
+      dayend: snapshot['dayend']?.toString() ?? '',
+      timestart: snapshot['timestart']?.toString() ?? '',
+      timeend: snapshot['timeend']?.toString() ?? '',
+      weekday: snapshot['weekday']?.toString() ?? '',  // Đảm bảo lấy giá trị của weekday nếu có
     );
   }
+
 
 }
