@@ -34,7 +34,7 @@ class _ListScheduleState extends State<ListSchedule> {
     await _dbRef.child(id).remove();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Deleted schedule $id"),
+        content: Text("Xóa thời khóa biểu $id"),
         backgroundColor: Colors.blue, // Blue background for SnackBar
         behavior: SnackBarBehavior.floating, // Floating behavior
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -46,7 +46,7 @@ class _ListScheduleState extends State<ListSchedule> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("List Schedule"),
+        title: Text("Danh sách thời khóa biểu"),
         backgroundColor: Colors.blue, // Blue AppBar
         elevation: 4.0,
       ),

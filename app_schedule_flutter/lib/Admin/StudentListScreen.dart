@@ -124,17 +124,17 @@ class _StudentListScreenState extends State<StudentListScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirm Deletion'),
-          content: Text('Are you sure you want to delete this student?'),
+          title: Text('Xác nhận xóa'),
+          content: Text('Bạn có muốn xóa sinh viên này không?'),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: Text('Hủy'),
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
               },
             ),
             TextButton(
-              child: Text('Delete'),
+              child: Text('Xóa'),
               onPressed: () async {
                 final studentDataRef = FirebaseDatabase.instance.ref('students');
                 final snapshot = await studentDataRef.get();
@@ -167,15 +167,15 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
                     // Close the dialog and show success message
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student deleted successfully')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Xóa sinh  viên thành công')));
                   } else {
                     // Show an error if the student wasn't found
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Student not found')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Không tìm thấy sinh viên')));
                   }
                 } else {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No data found')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Không tìm thấy dữ liệu')));
                 }
               },
             ),
@@ -189,7 +189,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Student List"),
+        title: Text("Danh sách sinh viên"),
         backgroundColor: Colors.blue, // Blue app bar
       ),
       body: ListView.builder(
@@ -205,11 +205,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
             child: ListTile(
               contentPadding: EdgeInsets.all(15),
               title: Text(
-                student['stuname'] ?? 'No Name',
+                student['stuname'] ?? 'Không có tên',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               subtitle: Text(
-                student['gmail'] ?? 'No Email',
+                student['gmail'] ?? 'Không có Email',
                 style: TextStyle(fontSize: 14),
               ),
               trailing: Row(

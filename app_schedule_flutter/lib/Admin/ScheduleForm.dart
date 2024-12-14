@@ -132,7 +132,7 @@ class _ScheduleFormState extends State<ScheduleForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.scheduleId == null ? "Add Schedule" : "Edit Schedule"),
+        title: Text(widget.scheduleId == null ? "Thêm thời khóa biểu" : "Sửa thời khóa biểu"),
         backgroundColor: Colors.blue, // Blue color for the AppBar
       ),
       body: Form(
@@ -148,13 +148,13 @@ class _ScheduleFormState extends State<ScheduleForm> {
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedClassId = value),
                 decoration: InputDecoration(
-                  labelText: "Class",
+                  labelText: "Lớp",
                   labelStyle: TextStyle(color: Colors.blue), // Blue label color
                   filled: true,
                   fillColor: Colors.blue.shade50, // Light blue background for dropdown
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null ? "Please select a class" : null,
+                validator: (value) => value == null ? "Hãy chọn lớp" : null,
               ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -164,13 +164,13 @@ class _ScheduleFormState extends State<ScheduleForm> {
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedRoomId = value),
                 decoration: InputDecoration(
-                  labelText: "Room",
+                  labelText: "Phòng",
                   labelStyle: TextStyle(color: Colors.blue),
                   filled: true,
                   fillColor: Colors.blue.shade50,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null ? "Please select a room" : null,
+                validator: (value) => value == null ? "Hãy chọn phòng" : null,
               ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -180,25 +180,25 @@ class _ScheduleFormState extends State<ScheduleForm> {
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedSubjectId = value),
                 decoration: InputDecoration(
-                  labelText: "Subject",
+                  labelText: "Môn học",
                   labelStyle: TextStyle(color: Colors.blue),
                   filled: true,
                   fillColor: Colors.blue.shade50,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null ? "Please select a subject" : null,
+                validator: (value) => value == null ? "Hãy chọn môn học" : null,
               ),
               SizedBox(height: 12),
               TextFormField(
                 controller: _daystartController,
                 decoration: InputDecoration(
-                  labelText: "Start Date",
+                  labelText: "Ngày bắt đầu",
                   labelStyle: TextStyle(color: Colors.blue),
                   filled: true,
                   fillColor: Colors.blue.shade50,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? "Please enter start date" : null,
+                validator: (value) => value!.isEmpty ? "Hãy nhập ngày bắt đầu" : null,
               ),
               SizedBox(height: 12),
               TextFormField(
@@ -210,43 +210,43 @@ class _ScheduleFormState extends State<ScheduleForm> {
                   fillColor: Colors.blue.shade50,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? "Please enter end date" : null,
+                validator: (value) => value!.isEmpty ? "Hãy nhập ngày kết thúc" : null,
               ),
               SizedBox(height: 12),
               TextFormField(
                 controller: _timestartController,
                 decoration: InputDecoration(
-                  labelText: "Start Time",
+                  labelText: "Giờ bắt đầu",
                   labelStyle: TextStyle(color: Colors.blue),
                   filled: true,
                   fillColor: Colors.blue.shade50,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? "Please enter start time" : null,
+                validator: (value) => value!.isEmpty ? "Hãy nhập giờ bắt đầu" : null,
               ),
               SizedBox(height: 12),
               TextFormField(
                 controller: _timeendController,
                 decoration: InputDecoration(
-                  labelText: "End Time",
+                  labelText: "Giờ kết thúc",
                   labelStyle: TextStyle(color: Colors.blue),
                   filled: true,
                   fillColor: Colors.blue.shade50,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? "Please enter end time" : null,
+                validator: (value) => value!.isEmpty ? "Hãy nhập giờ kết thúc" : null,
               ),
               SizedBox(height: 12),
               TextFormField(
                 controller: _weekdayController,
                 decoration: InputDecoration(
-                  labelText: "Weekday (2=Monday, ... 7=Sunday)",
+                  labelText: "Weekday (2=Thứ 2, ... 7=Chủ nhật)",
                   labelStyle: TextStyle(color: Colors.blue),
                   filled: true,
                   fillColor: Colors.blue.shade50,
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? "Please enter weekday" : null,
+                validator: (value) => value!.isEmpty ? "Hãy nhập weekday" : null,
               ),
               SizedBox(height: 20),
             ElevatedButton(
@@ -255,7 +255,7 @@ class _ScheduleFormState extends State<ScheduleForm> {
                 backgroundColor: Colors.blue, // Use backgroundColor instead of primary
                 padding: EdgeInsets.symmetric(vertical: 12),
               ),
-            child: Text(widget.scheduleId == null ? "Add Schedule" : "Update Schedule"),
+            child: Text(widget.scheduleId == null ? "Thêm thời khóa biểu" : "Cập nhật thời khóa biểu"),
               ),
             ],
           ),

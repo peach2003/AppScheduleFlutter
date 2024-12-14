@@ -60,14 +60,14 @@ class _EventListScreenState extends State<EventListScreen> {
     final eventRef = FirebaseDatabase.instance.ref('events');
     await eventRef.child(key).remove();
     _fetchEvents();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Event deleted successfully')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Xóa sự kiện thành công')));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Event List"),
+        title: Text("Danh sách sự kiện"),
         backgroundColor: Colors.blueAccent,
         elevation: 0,
       ),
@@ -105,7 +105,7 @@ class _EventListScreenState extends State<EventListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      event['title'] ?? 'No Title',
+                      event['Tiêu đề'] ?? 'Không tiêu đề',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -116,7 +116,7 @@ class _EventListScreenState extends State<EventListScreen> {
                     Text(
                       event['content'] != null && event['content'].length > 100
                           ? event['content'].substring(0, 100) + "..."
-                          : event['content'] ?? 'No Content',
+                          : event['content'] ?? 'Không có nội dung',
                       style: TextStyle(fontSize: 16, color: Colors.black87),
                     ),
                     SizedBox(height: 15),
@@ -124,7 +124,7 @@ class _EventListScreenState extends State<EventListScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Date: ${event['date'] ?? 'N/A'}",
+                          "Ngày: ${event['date'] ?? 'N/A'}",
                           style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                         Row(

@@ -61,7 +61,7 @@ class _EventFormState extends State<EventForm> {
             children: [
               Center(
                 child: Text(
-                  widget.event == null ? "Add New Event" : "Edit Event",
+                  widget.event == null ? "Thêm mới sự kiện" : "Chỉnh sửa sự kiện ",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -71,23 +71,23 @@ class _EventFormState extends State<EventForm> {
               ),
               SizedBox(height: 20),
               _buildTextField(
-                label: "Title",
+                label: "Tiêu đề",
                 initialValue: _title,
                 icon: Icons.title,
                 onSaved: (value) => _title = value,
                 validator: (value) =>
-                value == null || value.isEmpty ? "Title is required" : null,
+                value == null || value.isEmpty ? "Tiêu đề là bắt buộc" : null,
               ),
               _buildTextField(
-                label: "Content",
+                label: "Nội dung",
                 initialValue: _content,
                 icon: Icons.description,
                 onSaved: (value) => _content = value,
                 validator: (value) =>
-                value == null || value.isEmpty ? "Content is required" : null,
+                value == null || value.isEmpty ? "Nội dung là bắt buộc" : null,
               ),
               _buildTextField(
-                label: "Image URL",
+                label: "URL ảnh",
                 initialValue: _image,
                 icon: Icons.image,
                 onSaved: (value) => _image = value,
@@ -110,7 +110,7 @@ class _EventFormState extends State<EventForm> {
                     ),
                   ),
                   child: Text(
-                    "Save",
+                    "Lưu",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
