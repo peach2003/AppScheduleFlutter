@@ -46,10 +46,26 @@ class _ListScheduleState extends State<ListSchedule> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Danh sách thời khóa biểu"),
-        backgroundColor: Colors.blue, // Blue AppBar
+        title: Text("Danh sách thời khóa biểu",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 23,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Roboto'
+          ),
+        ),
+        backgroundColor: Color.fromARGB(255, 6, 138, 246), // Blue AppBar
         elevation: 4.0,
+        centerTitle:true,
+
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, size: 25, color: Colors.white,),
+          onPressed: (){
+            Navigator.pop(context);
+          },
+        ),
       ),
+
       body: ListView.builder(
         itemCount: _schedules.length,
         itemBuilder: (context, index) {
@@ -105,8 +121,8 @@ class _ListScheduleState extends State<ListSchedule> {
             MaterialPageRoute(builder: (context) => ScheduleForm()),
           );
         },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.blue, // Blue FAB
+        child: Icon(Icons.add, color: Colors.white,),
+        backgroundColor: Color.fromARGB(255, 47, 100, 253), // Blue FAB
       ),
     );
   }

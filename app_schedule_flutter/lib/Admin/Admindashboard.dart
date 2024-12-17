@@ -77,16 +77,10 @@ class _admindashboardState extends State<admindashboard> {
                       DrawerHeader(
                         child: Image.asset("assets/images/logo.png"),
                       ),
-                      DrawerListTile(
-                        title: 'Dashboard',
-                        svgSrc: "assets/images/icondashboard.svg",
-                        press: () {
-                          // Xử lý khi nhấn vào Dashboard
-                        },
-                      ),
+
                       DrawerListTile(
                         title: 'Sinh Viên',
-                        svgSrc: "assets/images/icondashboard.svg",
+                        svgSrc: "assets/images/student.svg",
                         press: () {
                           // Điều hướng đến StudentListScreen khi nhấn vào "Sinh Viên"
                           Navigator.push(
@@ -99,7 +93,7 @@ class _admindashboardState extends State<admindashboard> {
                       ),
                       DrawerListTile(
                         title: 'Thời Khóa Biểu',
-                        svgSrc: "assets/images/icondashboard.svg",
+                        svgSrc: "assets/images/timetable.svg",
                         press: () {
                           Navigator.push(
                             context,
@@ -111,7 +105,7 @@ class _admindashboardState extends State<admindashboard> {
                       ),
                       DrawerListTile(
                         title: 'Sự Kiện',
-                        svgSrc: "assets/images/icondashboard.svg",
+                        svgSrc: "assets/images/event.svg",
                         press: () {
                           // Xử lý khi nhấn vào Sự Kiện
                           Navigator.push(
@@ -125,7 +119,7 @@ class _admindashboardState extends State<admindashboard> {
                       Divider(),
                       DrawerListTile(
                         title: 'Đăng Xuất',
-                        svgSrc: "assets/images/iconlogout.svg",
+                        svgSrc: "assets/images/logout.svg",
                         press: _logout,
                       ),
                     ],

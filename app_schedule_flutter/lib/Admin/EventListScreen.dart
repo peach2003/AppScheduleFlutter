@@ -67,9 +67,24 @@ class _EventListScreenState extends State<EventListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Danh sách sự kiện"),
-        backgroundColor: Colors.blueAccent,
-        elevation: 0,
+        title: Text("Danh sách sự kiện",
+        style: TextStyle(
+            color: Colors.white,
+            fontSize: 23,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Roboto'
+        ),
+      ),
+      backgroundColor: Color.fromARGB(255, 6, 138, 246), // Blue AppBar
+      elevation: 4.0,
+      centerTitle:true,
+
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new, size: 25, color: Colors.white,),
+        onPressed: (){
+          Navigator.pop(context);
+        },
+      ),
       ),
       body: Container(
         decoration: BoxDecoration(

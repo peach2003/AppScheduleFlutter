@@ -189,8 +189,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Danh sách sinh viên"),
-        backgroundColor: Colors.blue, // Blue app bar
+        title: Text("Danh sách sinh viên",
+        style: TextStyle(
+            color: Colors.white,
+            fontSize: 23,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Roboto'
+        ),
+      ),
+      backgroundColor: Color.fromARGB(255, 6, 138, 246), // Blue AppBar
+      elevation: 4.0,
+      centerTitle:true,
+
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new, size: 25, color: Colors.white,),
+        onPressed: (){
+          Navigator.pop(context);
+        },
+      ), // Blue app bar
       ),
       body: ListView.builder(
         itemCount: studentList.length,
