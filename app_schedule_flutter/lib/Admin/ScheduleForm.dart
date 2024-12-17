@@ -204,7 +204,7 @@ class _ScheduleFormState extends State<ScheduleForm> {
               TextFormField(
                 controller: _dayendController,
                 decoration: InputDecoration(
-                  labelText: "End Date",
+                  labelText: "Ngày kết thúc",
                   labelStyle: TextStyle(color: Colors.blue),
                   filled: true,
                   fillColor: Colors.blue.shade50,
