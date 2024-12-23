@@ -124,6 +124,7 @@ class _ListScheduleState extends State<ListSchedule> {
         child: Icon(Icons.add, color: Colors.white,),
         backgroundColor: Color.fromARGB(255, 47, 100, 253), // Blue FAB
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

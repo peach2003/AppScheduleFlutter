@@ -130,7 +130,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
             TextButton(
               child: Text('Hủy'),
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
               },
             ),
             TextButton(
@@ -139,43 +139,54 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 final studentDataRef = FirebaseDatabase.instance.ref('students');
                 final snapshot = await studentDataRef.get();
 
+                // Thêm print debug
+                print("Attempting to delete student with ID: $stuid");
+
                 if (snapshot.exists) {
                   List<dynamic> students = [];
 
                   if (snapshot.value is List) {
-                    students = (snapshot.value as List).whereType<Map<String, dynamic>>().toList();
+                    students = List.from(snapshot.value as List);
                   } else if (snapshot.value is Map) {
-                    students = (snapshot.value as Map).values
-                        .map((item) => Map<String, dynamic>.from(item))
-                        .toList();
+                    students = (snapshot.value as Map).values.toList();
                   }
 
-                  // Find the index of the student to delete based on stuid
-                  final studentToDeleteIndex = students.indexWhere((student) => student['stuid'] == stuid);
+                  // Thêm print debug
+                  print("Current students in database: ${students.map((s) => s['stuid']).toList()}");
+
+                  // Đảm bảo so sánh cùng kiểu dữ liệu
+                  final studentToDeleteIndex = students.indexWhere(
+                          (student) => int.parse(student['stuid'].toString()) == stuid
+                  );
+
+                  print("Found student at index: $studentToDeleteIndex");
 
                   if (studentToDeleteIndex != -1) {
-                    // If student is found, remove it from Firebase
+                    // Xóa sinh viên
                     students.removeAt(studentToDeleteIndex);
-
-                    // Update the student list in Firebase by setting the updated list
                     await studentDataRef.set(students);
 
-                    // Remove the student from the local list
                     setState(() {
-                      studentList.removeWhere((student) => student['stuid'] == stuid);
+                      studentList.removeWhere(
+                              (student) => int.parse(student['stuid'].toString()) == stuid
+                      );
                     });
 
-                    // Close the dialog and show success message
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Xóa sinh  viên thành công')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Xóa sinh viên thành công'))
+                    );
                   } else {
-                    // Show an error if the student wasn't found
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Không tìm thấy sinh viên')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Không tìm thấy sinh viên'))
+                    );
                   }
                 } else {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Không tìm thấy dữ liệu')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Không tìm thấy dữ liệu'))
+                  );
                 }
               },
             ),
@@ -250,6 +261,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
         child: Icon(Icons.add),
         backgroundColor: Colors.blue, // Blue FAB
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

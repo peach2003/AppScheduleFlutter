@@ -120,7 +120,7 @@ class _EventListScreenState extends State<EventListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      event['Tiêu đề'] ?? 'Không tiêu đề',
+                      event['title'] ?? 'Không tiêu đề',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -168,6 +168,7 @@ class _EventListScreenState extends State<EventListScreen> {
         backgroundColor: Colors.blueAccent,
         child: Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
